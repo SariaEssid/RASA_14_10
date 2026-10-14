@@ -366,7 +366,9 @@ def get_context_from_langchain_rag(
         log_info_text(action_label, f"nbr_chunks: {nbr_chunks}")
 
     except (requests.exceptions.RequestException, ValueError) as e:
-        status_code = e.response.status_code if e.response is not None else None
+        response = getattr(e, "response", None)
+        status_code = getattr(response, "status_code", None)
+
         context = ""
         filename = "unknown"
 

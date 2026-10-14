@@ -19,10 +19,22 @@ class ConfigurationError(Exception):
     pass
 
 def validate_environment():
-    required_vars = ['API_URL', 'ANONYMIZATION_SALT', 'LANG_CHAIN_URL']
-    missing = [var for var in required_vars if not os.getenv(var)]
+    required_vars = [
+        "API_URL",
+        "ANONYMIZATION_SALT",
+        "LANG_CHAIN_URL",
+        "RASA_RAG_TOKEN",
+    ]
+
+    missing = [
+        name for name in required_vars
+        if not (os.getenv(name) or "").strip()
+    ]
+
     if missing:
-        raise ConfigurationError(f"Missing required environment variables: {missing}")
+        raise ConfigurationError(
+            f"Missing required environment variables: {missing}"
+        )
     log.info(f"Environment variables validated: {', '.join(required_vars)}")
 
 # Run validation on import
