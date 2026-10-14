@@ -1,0 +1,52 @@
+# Git
+.git/
+.gitignore
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# CI/CD
+.drone-*.yml
+
+# Environment files
+.env
+.env.*
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+venv/
+env/
+
+# Tests & scripts (not needed at runtime)
+tests/
+
+# Docs & misc
+README.md
+*.md
+index.html
+current.txt
+res.txt
+*.log
+
+# Rasa build artifacts (will be generated at runtime)
+.rasa/
+results/
+test_results/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Model files (large, should not be baked in)
+*.gguf
+
+# Old files
+requirements.txt.old

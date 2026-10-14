@@ -1,0 +1,204 @@
+kind: pipeline
+type: docker
+name: esprit_chatbot-rasa ci quality
+
+trigger:
+  branch:
+    - release/*
+  event:
+    - push
+    - custom
+
+volumes:
+  - name: dockersock
+    host:
+      path: /var/run/docker.sock
+  - name: cache
+    host:
+      path: /tmp/cache
+
+steps:
+# #=========================
+# # 1. INSTALL + TEST + COVERAGE
+# # =========================
+  - name: unit-tests
+    image: python:3.9
+
+    environment:
+      PYTHONPATH: /drone/src
+
+    commands:
+      - pwd
+      - ls -la
+      - python --version
+
+      - python -m venv venv
+      - . venv/bin/activate
+
+      - pip install --upgrade pip setuptools wheel cython
+
+      # Match DEV environment versions
+      - pip install openai
+      - pip install pysonar==1.5.0.4793
+      - pip install coverage==7.10.7
+      - pip install pytest==8.4.2
+      - pip install pytest-asyncio==1.2.0
+      - pip install pytest-cov==7.1.0
+
+      # Missing test dependencies
+      - pip install httpx==0.27.2
+      - pip install respx
+      - pip install llama-cpp-python
+
+      - pip install "PyYAML>5.3,<6.0"
+      - pip install -r requirements.txt
+
+      # Diagnostics
+      - python -c "import fastapi, starlette, httpx; print('FastAPI=', fastapi.__version__)"
+      - python -c "import fastapi, starlette, httpx; print('Starlette=', starlette.__version__)"
+      - python -c "import fastapi, starlette, httpx; print('httpx=', httpx.__version__)"
+      -
+      - python -c "import sys; print(sys.path)"
+      - python -c "import actions; print(actions.__file__)"
+      - python -c "import respx; print('respx OK')"
+      - python -c "import llama_cpp; print('llama_cpp OK')"
+
+      # Tests + Coverage
+      - pytest tests --cov=. --cov-report=xml:coverage.xml --cov-report=term
+
+# # =========================
+# # 2. SONARQUBE ANALYSIS
+# # =========================
+  - name: sonar-scanner
+    image: sonarsource/sonar-scanner-cli:latest
+
+    environment:
+      SONAR_HOST_URL:
+        from_secret: sonar_host_url
+      SONAR_TOKEN:
+        from_secret: sonar_token
+
+    commands:
+      - ls -lh coverage.xml
+      - >
+        sonar-scanner
+        -Dsonar.projectKey=esprit-rasa-chatbot
+        -Dsonar.projectName=esprit-rasa-chatbot
+        -Dsonar.sources=actions,llm_model,scripts
+        -Dsonar.tests=tests
+        -Dsonar.test.inclusions=tests/**/*.py
+        -Dsonar.host.url=$SONAR_HOST_URL
+        -Dsonar.token=$SONAR_TOKEN
+        -Dsonar.python.coverage.reportPaths=coverage.xml
+        -Dsonar.exclusions=**/__pycache__/**,**/*.pyc,**/venv/**,**/.venv/**
+        -Dsonar.working.directory=/tmp/.scannerwork
+
+    when:
+      status:
+      - success
+
+# =========================
+# 3. BUILD + PUSH DOCKER IMAGE
+# =========================
+  - name: build and publish
+    image: plugins/docker
+    environment:
+      DOCKER_BUILDKIT: 1
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+    settings:
+      username:
+        from_secret: harbor_username
+      password:
+        from_secret: harbor_password
+      dockerfile: Dockerfile
+      experimental: true
+      repo: 192.168.0.128:5000/esprit-chatbot.esprit.tn/chatbot-rasa
+      registry: 192.168.0.128:5000
+      insecure: true
+      tags:
+        - ${DRONE_COMMIT:0:7}-qa
+
+# =========================
+# 4. GITOPS DEPLOY UPDATE
+# =========================
+  - name: git-ops (patch & push)
+    image: alpine/git
+    environment:
+      GIT_OPS_SSH_KEY:
+        from_secret: ssh_key_github_dsi-application
+    commands:
+      - mkdir -p ~/.ssh
+      - echo "$GIT_OPS_SSH_KEY" > ~/.ssh/id_ed25519
+      - chmod 600 ~/.ssh/id_ed25519
+      - ssh-keyscan github.com >> ~/.ssh/known_hosts
+      - git clone git@github.com:ESPRIT-DSI-OPS/esprit-dsi_gitops.git
+      - cd esprit-dsi_gitops/esprit-chatbot/qa
+      - sed -E -i "s|192.168.0.128:5000/esprit-chatbot.esprit.tn/chatbot-rasa:[^ ]+|192.168.0.128:5000/esprit-chatbot.esprit.tn/chatbot-rasa:${DRONE_COMMIT:0:7}-qa|g" chatbot.yaml
+      - git config --global user.name "drone-ci"
+      - git config --global user.email "drone-ci.qa@esprit.tn"
+      - git add .
+      - git commit -m "update esprit_chatbot-rasa ${DRONE_COMMIT:0:7}-qa"
+      - git push -f origin master
+
+# =========================
+# 5. CLEANUP (IMPORTANT)
+# =========================
+  - name: cleanup workspace
+    image: alpine
+    commands:
+      - echo "Cleaning workspace..."
+      - rm -rf samples
+      - rm -rf target
+      - rm -rf .pytest_cache
+      - rm -f .coverage
+      - rm -f coverage.xml
+      - rm -rf .scannerwork
+      - find . -type d -name "__pycache__" -prune -exec rm -rf {} +
+      - find . -type f -name "*.pyc" -delete
+      - echo "Cleanup complete"
+    when:
+      status:
+        - success
+        - failure
+
+# =========================
+# 6. SUCCESS NOTIFICATION
+# =========================
+  - name: success notification
+    image: drillster/drone-email
+    when:
+      status: [ success ]
+    settings:
+      from: Drone-CI QA <notification-ops-qa@esprit.tn>
+      host: smtp.office365.com
+      port: 587
+      username:
+        from_secret: email_username_outlook
+      password:
+        from_secret: email_password_outlook
+      recipients_only: true
+      recipients:
+        - seddik.bouzayani@esprit.tn
+      subject: SUCCESS - ${DRONE_STAGE_NAME} pipeline [${DRONE_COMMIT:0:7}-qa]
+
+# =========================
+# 7. FAILURE NOTIFICATION
+# =========================
+  - name: failure notification
+    image: drillster/drone-email
+    when:
+      status: [ failure ]
+    settings:
+      from: Drone-CI QA <notification-ops-qa@esprit.tn>
+      host: smtp.office365.com
+      port: 587
+      username:
+        from_secret: email_username_outlook
+      password:
+        from_secret: email_password_outlook
+      recipients_only: true
+      recipients:
+        - seddik.bouzayani@esprit.tn
+      subject: FAILURE ${DRONE_STAGE_NAME} pipeline [${DRONE_COMMIT:0:7}-qa]

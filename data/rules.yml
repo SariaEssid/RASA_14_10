@@ -1,0 +1,1388 @@
+version: "3.1"
+
+rules:
+
+############################################################################# SEMANTIC RESPONSES
+  - rule: Trigger semantic fallback
+    steps:
+      - intent: nlu_fallback   #
+      - action: action_semantic_qa
+
+############################################################################# FEEDBACK RESPONSES
+  - rule: Handle positive feedback
+    steps:
+      - intent: affirm_helpful
+      - action: action_log_feedback
+
+  - rule: Handle negative feedback
+    steps:
+      - intent: deny_helpful
+      - action: action_log_feedback
+
+############################################################################# DYNAMIC DIRECT RESPONSE
+  - rule: Handle dynamic response - Say hello back + Set session ID on new conversation
+    steps:
+      - intent: greet
+      - action: action_set_session
+      - action: action_set_user
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "none"
+      - action: action_listen
+    # 💡 Add this line if no further action or user input is immediately expected
+    #    This tells Rasa the rule has finished here.
+
+  - rule: Handle dynamic response - Say Good Bye back
+    steps:
+      - intent: bye
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "none"
+      - action: action_listen
+
+  - rule: Stressed Candidat
+    steps:
+      - intent: stressed_candidat
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "none"
+      - action: action_listen
+
+  - rule: Answer dynamically Contact Support
+    steps:
+      - intent: ask_request_support_contact
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "none"
+      - action: action_listen
+
+  - rule: Candidats éligibles par ancienneté
+    steps:
+      - intent: ask_candidats_elligibles_anciennete
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "none"
+      - action: action_listen
+
+  - rule: Modification Livrables
+    steps:
+      - intent: ask_modify_deposit
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "none"
+      - action: action_listen
+
+  - rule: Notification for Candidats
+    steps:
+      - intent: ask_notify_candidat
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "none"
+      - action: action_listen
+
+  - rule: Renouvellement Session Passage de Grade
+    steps:
+      - intent: ask_renew_session_pg
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "none"
+      - action: action_listen
+
+  - rule: Frais de participation
+    steps:
+      - intent: ask_fees_inscription
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "none"
+      - action: action_listen
+
+  - rule: Session Rattrappage
+    steps:
+      - intent: ask_make_up_session
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "none"
+      - action: action_listen
+
+  - rule: Success Candidat
+    steps:
+      - intent: ask_success_candidat
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "none"
+      - action: action_listen
+
+  - rule: Failure Candidat
+    steps:
+      - intent: ask_failure_candidat
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "none"
+      - action: action_listen
+
+  - rule: Ask critere evaluation sscomp
+    steps:
+      - intent: ask_criteres_evaluation_sscomp
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "eval_grid"
+      - action: action_listen
+
+  - rule: Reclamation no typo
+    steps:
+      - intent: reclam_no_typo
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "no_typos"
+      - action: action_listen
+
+  - rule: Affirm Advice 2
+    steps:
+      - intent: affirm_advice_2
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "none"
+      - action: action_listen
+
+  - rule: Affirm Advice 3
+    steps:
+      - intent: affirm_advice_3
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "none"
+      - action: action_listen
+
+  - rule: Ask Confidentialite Dossiers
+    steps:
+      - intent: ask_confidentialite_delivrables
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "none"
+      - action: action_listen
+
+  - rule: Ask Security Process
+    steps:
+      - intent: ask_equality_mesures
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "none"
+      - action: action_listen
+
+  - rule: Ask Select Evaluator Jury
+    steps:
+      - intent: ask_select_evaluator_jury
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "none"
+      - action: action_listen
+
+  - rule: Ask Role CPGR
+    steps:
+      - intent: ask_role_cpgr
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "none"
+      - action: action_listen
+
+  - rule: Ask Reference Period
+    steps:
+      - intent: ask_reference_period
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "none"
+      - action: action_listen
+
+  ############################################################################# ORPHAN AFFIRM
+  - rule: handle orphan affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "none"
+    steps:
+      - intent: affirm
+      - action: utter_confused_affirm
+
+############################################################################# DYNAMIC RESPONSES 23-10-2025
+  #HERE-2
+
+  - rule: Answer dynamically System features
+    steps:
+      - intent: ask_workflow_evaluation
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "none"
+      - action: action_listen
+
+  - rule: Answer dynamically Academic comments
+    steps:
+      - intent: ask_view_academic_comments
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "none"
+      - action: action_listen
+
+  - rule: Answer Historique evaluation
+    steps:
+      - intent: ask_historique_evaluation
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "none"
+      - action: action_listen
+
+############################################################################# NOTE Dissertation FR+EN
+  - rule: handle give Dissertation FR flow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "note_diss_fr" # CONFIRMED
+      - action: action_dynamic_final_unit_results
+
+  - rule: handle give Dissertation EN fl1ow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "note_diss_en"
+      - action: action_dynamic_final_unit_results
+
+  - rule: handle Get Note Dissertation FR affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "note_diss_fr" # CONFIRMED
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle Get Note Dissertation EN affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "note_diss_en"
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle Get Note Dissertation FR deny
+    condition:
+      - slot_was_set:
+        - active_flow: "note_diss_fr" # CONFIRMED at 05-01
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+  - rule: handle Get Note Dissertation EN deny
+    condition:
+      - slot_was_set:
+        - active_flow: "note_diss_en"
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# NOTE Capsule FR+EN
+  - rule: handle give Capsule FR flow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "note_caps_fr" # CONFIRMED
+      - action: action_dynamic_final_unit_results
+
+  - rule: handle give Capsule EN flow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "note_caps_en"
+      - action: action_dynamic_final_unit_results
+
+  - rule: handle Get Note Capsule FR affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "note_caps_fr" # CONFIRMED
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle Get Note Capsule EN affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "note_caps_en"
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle Get Note Capsule FR deny
+    condition:
+      - slot_was_set:
+        - active_flow: "note_caps_fr" # CONFIRMED
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+  - rule: handle Get Note Capsule EN deny
+    condition:
+      - slot_was_set:
+        - active_flow: "note_caps_en"
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# NOTE Prod RDI
+  - rule: handle give Prod RDI flow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "note_prod_rdi" # CONFIRMED
+      - action: action_dynamic_final_unit_results
+
+  - rule: handle Get Note Prod RDI affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "note_prod_rdi" # CONFIRMED
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle Get Note Prod RDI deny
+    condition:
+      - slot_was_set:
+        - active_flow: "note_prod_rdi" # CONFIRMED
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# NOTE Supports Pédagogiques
+  - rule: handle give Supports Pédagogiques flow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "note_supp_peda" # CONFIRMED
+      - action: action_dynamic_final_unit_results
+
+  - rule: handle Get Note Supports Pédagogiques affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "note_supp_peda" # CONFIRMED
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle Get Note Supports Pédagogiques deny
+    condition:
+      - slot_was_set:
+        - active_flow: "note_supp_peda" # CONFIRMED
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# NOTE Test QCM
+  - rule: handle give Test QCM flow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "note_test_qcm" # CONFIRMED
+      - action: action_dynamic_final_unit_results
+
+  - rule: handle Get Note Test QCM affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "note_test_qcm" # CONFIRMED
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle Get Note Test QCM deny
+    condition:
+      - slot_was_set:
+        - active_flow: "note_test_qcm" # CONFIRMED
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# NOTE Présentation Dossier
+  - rule: handle give Présentation Dossier flow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "note_pres_doss" # CONFIRMED
+      - action: action_dynamic_final_unit_results
+
+  - rule: handle Get Note Présentation Dossier affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "note_pres_doss" # CONFIRMED
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle Get Note Présentation Dossier deny
+    condition:
+      - slot_was_set:
+        - active_flow: "note_pres_doss" # CONFIRMED
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# NOTE Discussion Avec Jury
+  - rule: handle give Discussion Avec Jury flow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "note_diss_jury" # CONFIRMED
+      - action: action_dynamic_final_unit_results
+
+  - rule: handle Get Note Discussion Avec Jury affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "note_diss_jury" # CONFIRMED
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle Get Note Discussion Avec Jury deny
+    condition:
+      - slot_was_set:
+        - active_flow: "note_diss_jury" # CONFIRMED
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# NOTE Séquence Enseignement 1
+  - rule: handle give Note Séquence Enseignement 1 flow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "note_eval_pres_se" # CONFIRMED
+      - action: action_dynamic_final_unit_results
+
+  - rule: handle Get Note Séquence Enseignement 1 affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "note_eval_pres_se" # CONFIRMED
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle Get Note Séquence Enseignement 1 deny
+    condition:
+      - slot_was_set:
+        - active_flow: "note_eval_pres_se" # CONFIRMED
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# NOTE Séquence Enseignement 2
+  - rule: handle give Note Séquence Enseignement 2 flow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "note_eval_se" # CONFIRMED
+      - action: action_dynamic_final_unit_results
+
+  - rule: handle Get Note Séquence Enseignement 2 affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "note_eval_se" # CONFIRMED
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle Get Note Séquence Enseignement 2 deny
+    condition:
+      - slot_was_set:
+        - active_flow: "note_eval_se" # CONFIRMED
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# NOTE Plateforme de TP 1
+  - rule: handle give Note Plateforme de TP 1 flow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "note_eval_pres_ptp" # CONFIRMED
+      - action: action_dynamic_final_unit_results
+
+  - rule: handle Get Note Plateforme de TP 1 affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "note_eval_pres_ptp" # CONFIRMED
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle Get Note Plateforme de TP 1 deny
+    condition:
+      - slot_was_set:
+        - active_flow: "note_eval_pres_ptp" # CONFIRMED
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# NOTE Plateforme de TP 2
+  - rule: handle give Note Plateforme de TP 2 flow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "note_eval_ptp" # CONFIRMED
+      - action: action_dynamic_final_unit_results
+
+  - rule: handle Get Note Plateforme de TP 2 affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "note_eval_ptp" # CONFIRMED
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle Get Note Plateforme de TP 2 deny
+    condition:
+      - slot_was_set:
+        - active_flow: "note_eval_ptp" # CONFIRMED
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# NOTE ALL QCM
+  - rule: handle give Note ALL QCM flow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "note_qcm_all" # CONFIRMED
+      - action: action_dynamic_final_unit_results
+
+  - rule: handle Get Note ALL QCM affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "note_qcm_all" # CONFIRMED
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle Get Note ALL QCM deny
+    condition:
+      - slot_was_set:
+        - active_flow: "note_qcm_all" # CONFIRMED
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# NOTE Capsules Pédagogiques
+  - rule: handle give Note Capsules Pédagogiques flow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "note_caps_peda_all" # CONFIRMED
+      - action: action_dynamic_final_unit_results
+
+  - rule: handle Get Note Capsules Pédagogiques affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "note_caps_peda_all" # CONFIRMED
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle Get Note Capsules Pédagogiques deny
+    condition:
+      - slot_was_set:
+        - active_flow: "note_caps_peda_all" # CONFIRMED
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# NOTE Dissertations
+  - rule: handle give Note Dissertations flow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "note_diss_all" # CONFIRMED
+      - action: action_dynamic_final_unit_results
+
+  - rule: handle Get Note Dissertations affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "note_diss_all" # CONFIRMED
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle Get Note Dissertations deny
+    condition:
+      - slot_was_set:
+        - active_flow: "note_diss_all" # CONFIRMED
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# NOTE Séquence Enseignement ALL
+  - rule: handle give Note Séquence Enseignement ALL flow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "note_seq_ens_all" # CONFIRMED
+      - action: action_dynamic_final_unit_results
+
+  - rule: handle Get Note Séquence Enseignement ALL affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "note_seq_ens_all" # CONFIRMED
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle Get Note Séquence Enseignement ALL deny
+    condition:
+      - slot_was_set:
+        - active_flow: "note_seq_ens_all" # CONFIRMED
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# NOTE Plateforme de TP ALL
+  - rule: handle give Note Plateforme de TP ALL flow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "note_plat_tp_all" # CONFIRMED
+      - action: action_dynamic_final_unit_results
+
+  - rule: handle Get Note Plateforme de TP ALL affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "note_plat_tp_all" # CONFIRMED
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle Get Note Plateforme de TP ALL deny
+    condition:
+      - slot_was_set:
+        - active_flow: "note_plat_tp_all" # CONFIRMED
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# NOTE Production Pédagogiques
+  - rule: handle give Note Production Pédagogiques flow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "note_prod_peda_all" # CONFIRMED
+      - action: action_dynamic_final_unit_results
+
+  - rule: handle Get Note Production Pédagogiques affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "note_prod_peda_all" # CONFIRMED
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle Get Note Production Pédagogiques deny
+    condition:
+      - slot_was_set:
+        - active_flow: "note_prod_peda_all" # CONFIRMED
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# NOTE Entretien Avec Jury
+  - rule: handle give Note Entretien Avec Jury flow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "note_entr_jury_all" # CONFIRMED
+      - action: action_dynamic_final_unit_results
+
+  - rule: handle Get Note Entretien Avec Jury affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "note_entr_jury_all" # CONFIRMED
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle Get Note Entretien Avec Jury deny
+    condition:
+      - slot_was_set:
+        - active_flow: "note_entr_jury_all" # CONFIRMED
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# NOTE Composante 1
+  - rule: handle give Note Composante 1 flow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "note_first_comp" # CONFIRMED
+      - action: action_dynamic_final_unit_results
+
+  - rule: handle Get Note Composante 1 affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "note_first_comp" # CONFIRMED
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle Get Note Composante 1 deny
+    condition:
+      - slot_was_set:
+        - active_flow: "note_first_comp" # CONFIRMED
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# NOTE Composante 2
+  - rule: handle give Note Composante 2 flow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "note_second_comp" # CONFIRMED
+      - action: action_dynamic_final_unit_results
+
+  - rule: handle Get Note Composante 2 affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "note_second_comp" # CONFIRMED
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle Get Note Composante 2 deny
+    condition:
+      - slot_was_set:
+        - active_flow: "note_second_comp" # CONFIRMED
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# NOTE Composante 3
+  - rule: handle give Note Composante 3 flow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "note_third_comp" # CONFIRMED
+      - action: action_dynamic_final_unit_results
+
+  - rule: handle Get Note Composante 3 affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "note_third_comp" # CONFIRMED
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle Get Note Composante 3 deny
+    condition:
+      - slot_was_set:
+        - active_flow: "note_third_comp" # CONFIRMED
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# Congrat + Deliberation
+# 22-10-2025
+  - rule: handle give Final results flow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "congrats" # CONFIRMED
+      - action: action_congrat_final_results
+
+  - rule: handle give Final results flow after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+        - active_flow: "deliberation" # CONFIRMED
+      - action: action_congrat_final_results
+
+############################################################################# NOTE SS-Composante
+  - rule: handle give SS-Composante after Authentication
+    steps:
+      - intent: provide_credentials
+      - slot_was_set:
+          - active_flow:
+            - "note_supp_peda"
+            - "note_test_qcm"
+            - "note_pres_doss"
+            - "note_diss_jury"
+            - "note_eval_pres_se"
+            - "note_eval_se"
+            - "note_eval_pres_ptp"
+            - "note_eval_ptp"
+            - "note_qcm_all"
+            - "note_caps_peda_all"
+            - "note_diss_all"
+            - "note_seq_ens_all"
+            - "note_plat_tp_all"
+            - "note_prod_peda_all"
+            - "note_entr_jury_all"
+            - "note_first_comp"
+            - "note_second_comp"
+            - "note_third_comp"
+      - action: action_dynamic_final_unit_results
+
+  - rule: handle Get Note SS-Composante affirm
+    condition:
+      - slot_was_set:
+        - active_flow:
+          - "note_supp_peda"
+          - "note_doss"
+          - "note_test_qcm"
+          - "note_pres_doss"
+          - "note_diss_jury"
+          - "note_eval_pres_se"
+          - "note_eval_se"
+          - "note_eval_pres_ptp"
+          - "note_eval_ptp"
+          - "note_qcm_all"
+          - "note_caps_peda_all"
+          - "note_diss_all"
+          - "note_seq_ens_all"
+          - "note_plat_tp_all"
+          - "note_prod_peda_all"
+          - "note_entr_jury_all"
+          - "note_first_comp"
+          - "note_second_comp"
+          - "note_third_comp"
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle Get Note SS-Composante deny
+    condition:
+      - slot_was_set:
+        - active_flow:
+          - "note_supp_peda"
+          - "note_doss"
+          - "note_test_qcm"
+          - "note_pres_doss"
+          - "note_diss_jury"
+          - "note_eval_pres_se"
+          - "note_eval_se"
+          - "note_eval_pres_ptp"
+          - "note_eval_ptp"
+          - "note_qcm_all"
+          - "note_caps_peda_all"
+          - "note_diss_all"
+          - "note_seq_ens_all"
+          - "note_plat_tp_all"
+          - "note_prod_peda_all"
+          - "note_entr_jury_all"
+          - "note_first_comp"
+          - "note_second_comp"
+          - "note_third_comp"
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+  ############################################################################# FINAL RESULTS
+  - rule: handle congrats final results affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "congrats"
+    steps:
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - rule: handle congrats final results deny
+    condition:
+      - slot_was_set:
+        - active_flow: "congrats"# NEW : 22-10-2025 ***
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# DELIBERATION FINAL RESULTS
+  - rule: handle deliberation final results affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "deliberation" # CONFIRMED
+    steps:
+      - intent: affirm
+      - action: action_deliberation_final_results
+
+  - rule: handle deliberation final results deny
+    condition:
+      - slot_was_set:
+        - active_flow: "deliberation"# NEW : 22-10-2025 ***
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# SELECT COMPOSANTE FOR GUIDE TO PASSAGE DE GRADE
+  - rule: Handle composante 1 click (guide_comp)
+    condition:
+      - slot_was_set:
+          - active_flow: "guide_comp"
+    steps:
+      - intent: select_comp_for_guide
+      - action: action_select_button
+      - slot_was_set:
+          - active_flow: "first_comp"
+
+  - rule: Handle composante 1 click (selected_comp)
+    condition:
+      - slot_was_set:
+          - active_flow: "selected_comp"
+    steps:
+      - intent: select_comp_for_guide
+      - action: action_select_button
+      - slot_was_set:
+          - active_flow: "first_comp"
+
+  - rule: Handle composante 2 click
+    condition:
+      - slot_was_set:
+        - active_flow: "guide_comp"
+    steps:
+      - intent: select_comp_for_guide
+      - action: action_select_button
+      - slot_was_set:
+        - active_flow: "second_comp"
+
+  - rule: Handle composante 2 click
+    condition:
+      - slot_was_set:
+        - active_flow: "selected_comp"
+    steps:
+      - intent: select_comp_for_guide
+      - action: action_select_button
+      - slot_was_set:
+        - active_flow: "second_comp"
+
+  - rule: Handle composante 3 click
+    condition:
+      - slot_was_set:
+        - active_flow: "guide_comp"
+    steps:
+      - intent: select_comp_for_guide
+      - action: action_select_button
+      - slot_was_set:
+        - active_flow: "third_comp"
+
+  - rule: Handle composante 3 click
+    condition:
+      - slot_was_set:
+        - active_flow: "selected_comp"
+    steps:
+      - intent: select_comp_for_guide
+      - action: action_select_button
+      - slot_was_set:
+        - active_flow: "third_comp"
+
+  - rule: Handle next details after affirm (progressive “Oui”)
+    condition:
+      - slot_was_set:
+        - active_flow: "guide_comp"
+    steps:
+      - intent: affirm
+      - action: action_get_next_details_response
+
+  - rule: Handle guide composante next details (affirm)
+    condition:
+      - slot_was_set:
+        - active_flow: "guide_comp"
+    steps:
+      - intent: affirm
+      - action: action_get_next_details_response
+
+  - rule: Handle guide composante deny (stop flow)
+    condition:
+      - slot_was_set:
+        - active_flow: "selected_comp"
+    steps:
+      - intent: deny
+      - action: action_dynamic_faq
+
+
+############################################################################# SELECT ADVICE | PLANNING for STRESSED CANDIDAT
+  - rule: Handle Planning click
+    steps:
+      - intent: ask_about_candidature_passage_grade
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "guide_comp"
+
+  - rule: Handle Advice click
+    steps:
+      - intent: affirm_advice_1
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "give_advice_1" # A custom slot to save the choice
+
+  - rule: Handle Give Advice 2 affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "give_advice_1"
+    steps:
+      - intent: affirm
+      - action: action_get_dynamic_response
+
+  - rule: Handle Give Advice 3 affirm
+    condition:
+      - slot_was_set:
+        - active_flow: "give_advice_2"
+    steps:
+      - intent: affirm
+      - action: action_get_dynamic_response
+
+############################################################################# SELECT SS COMPOSANTE FOR EVALUATION GRID
+  - rule: Handle ss composante click (Test QCM)
+    condition:
+      - slot_was_set:
+          - active_flow: "eval_grid"
+    steps:
+      - intent: select_comp_for_guide
+      - action: action_select_button
+      - slot_was_set:
+          - active_flow: "test_qcm"
+
+  - rule: Handle ss composante click (Dissertations FR & EN)
+    condition:
+      - slot_was_set:
+          - active_flow: "eval_grid"
+    steps:
+      - intent: select_comp_for_guide
+      - action: action_select_button
+      - slot_was_set:
+          - active_flow: "diss_all"
+
+  - rule: Handle ss composante click (Capsules FR & EN)
+    condition:
+      - slot_was_set:
+          - active_flow: "eval_grid"
+    steps:
+      - intent: select_comp_for_guide
+      - action: action_select_button
+      - slot_was_set:
+          - active_flow: "caps_peda_all"
+
+  - rule: Handle ss composante click (SEQUENCES ENSEIGNEMENT)
+    condition:
+      - slot_was_set:
+          - active_flow: "eval_grid"
+    steps:
+      - intent: select_comp_for_guide
+      - action: action_select_button
+      - slot_was_set:
+          - active_flow: "seq_ens_all"
+
+  - rule: Handle ss composante click (PLATEFORME DE TP)
+    condition:
+      - slot_was_set:
+          - active_flow: "eval_grid"
+    steps:
+      - intent: select_comp_for_guide
+      - action: action_select_button
+      - slot_was_set:
+          - active_flow: "plat_tp_all"
+
+  - rule: Handle ss composante click (SUPPORTS PEDAGOGIQUES)
+    condition:
+      - slot_was_set:
+          - active_flow: "eval_grid"
+    steps:
+      - intent: select_comp_for_guide
+      - action: action_select_button
+      - slot_was_set:
+          - active_flow: "supp_peda"
+
+  - rule: Handle ss composante click (PRODUCTION RDI)
+    condition:
+      - slot_was_set:
+          - active_flow: "eval_grid"
+    steps:
+      - intent: select_comp_for_guide
+      - action: action_select_button
+      - slot_was_set:
+          - active_flow: "prod_rdi"
+
+  - rule: Handle ss composante click (DOSSIER)
+    condition:
+      - slot_was_set:
+          - active_flow: "eval_grid"
+    steps:
+      - intent: select_comp_for_guide
+      - action: action_select_button
+      - slot_was_set:
+          - active_flow: "doss"
+
+  - rule: Handle ss composante click (PRESENTATION + ENTRETIEN AVEC JURY)
+    condition:
+      - slot_was_set:
+          - active_flow: "eval_grid"
+    steps:
+      - intent: select_comp_for_guide
+      - action: action_select_button
+      - slot_was_set:
+          - active_flow: "entr_jury_all"
+
+############################################################################# ANSWER FROM JSON
+  - rule: Ask Success Rate
+    steps:
+      - intent: ask_success_rate   #BT
+      - action: action_get_response_from_json
+      - slot_was_set:
+          - active_flow: "none"
+      - action: action_listen
+
+  - rule: Concerned Grades
+    steps:
+      - intent: ask_concerned_grades   #BT
+      - action: action_get_response_from_json
+      - slot_was_set:
+          - active_flow: "none"
+      - action: action_listen
+
+  - rule: Number of Needed Positions By Speciality
+    steps:
+      - intent: ask_nbr_needed_positions_by_spec   #BT
+      - action: action_get_response_from_json
+      - slot_was_set:
+          - active_flow: "none"
+      - action: action_listen
+
+
+############################################################################# ANSWER FROM PDF
+
+  - rule: give score by comp
+    steps:
+      - intent: give_score_by_comp   #BT
+      - action: action_pg_infos_pdf
+
+  - rule: give Date by comp
+    steps:
+      - intent: give_date_by_comp   #BT
+      - action: action_pg_infos_pdf
+
+  - rule: give delivery kind by comp
+    steps:
+      - intent: ask_types_livrables   #BT
+      - action: action_pg_infos_pdf
+
+  - rule: ask place examen
+    steps:
+      - intent: ask_place_examen   #BT
+      - action: action_pg_infos_pdf
+
+  - rule: give duration by comp
+    steps:
+      - intent: ask_duration_exam   #BT
+      - action: action_pg_infos_pdf
+
+  - rule: give comp hierarchy
+    steps:
+      - intent: give_comp_hierarchy   #BT
+      - action: action_lang_chain_routing
+
+  - rule: Ask about Evaluator vs PJ
+    steps:
+      - intent: ask_eval_vs_pj   #BT
+      - action: action_evaluators_pjs
+
+  - rule: Ask Evaluator/PJ by speciality and comp-sscomp
+    steps:
+      - intent: ask_expert_by_spec_comp   #BT
+      - action: action_evaluators_pjs
+
+  - rule: Ask informations about Evaluator/PJ by name
+    steps:
+      - intent: ask_infos_expert_by_name   #BT
+      - action: action_evaluators_pjs
+
+# Markdown
+  - rule: present academic stuff
+    steps:
+      - intent: present_academic_stuff   #BT
+      - action: action_academic_stuff
+
+  - rule: Present ESSID Saria
+    steps:
+      - intent: ask_present_essid_saria   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Answer offline mode
+    steps:
+      - intent: ask_offline_mode   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Answer multilingual mode
+    steps:
+      - intent: ask_multilingual_mode   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Present PGPG Plateform
+    steps:
+      - intent: present_pgpg_platform   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Present PFE Plateform
+    steps:
+      - intent: present_pfe_platform   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Ask Link Video Drive in PDF
+    steps:
+      - intent: ask_link_video_drive_in_pdf   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Ask Change Password
+    steps:
+      - intent: ask_change_password   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Ask Reset Password after Forgot
+    steps:
+      - intent: ask_forgot_reset_password   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: How Authenticate With Chatbot
+    steps:
+      - intent: how_authenticate_with_chatbot   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Present ESPRIT
+    steps:
+      - intent: ask_esprit_dsi_ai   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Ask ESPRIT ranking
+    steps:
+      - intent: ask_ranking_esprit   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Ask About ESB
+    steps:
+      - intent: ask_about_esb   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Answer plagirism
+    steps:
+      - intent: ask_plagiarism   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Answer Moodle
+    steps:
+      - intent: ask_moodle   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Answer procedure pg
+    steps:
+      - intent: ask_procedure_pg   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Ask Global Advices PG
+    steps:
+      - intent: ask_global_advices_pg   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Ask Granular Advices PG
+    steps:
+      - intent: ask_granular_advices_pg   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Answer from PDF for Quantity & Quality Proof
+    steps:
+      - intent: ask_normal_exceptional_metrics   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Ask Modify Profile Photo
+    steps:
+      - intent: ask_modify_profile_photo   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Answer dynamically Access resources by Evaluator
+    steps:
+      - intent: ask_access_resources_by_evaluator   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Ask About Composante
+    steps:
+      - intent: ask_about_comp   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Ask About Sous Sous Composante
+    steps:
+      - intent: select_comp_for_guide #ask_about_sscomp   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Ask Attach Proofs
+    steps:
+      - intent: ask_attach_proofs   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Answer dynamically Personal info
+    steps:
+      - intent: ask_update_personal_information   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Ask about too Long input
+    steps:
+      - intent: too_long_input   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Ask Level Publication
+    steps:
+      - intent: ask_level_publication   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Answer View academic comments
+    steps:
+      - intent: ask_demande_reevaluation   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Answer dynamically automatic evaluation
+    steps:
+      - intent: ask_handle_automatic_evaluations   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Answer Ask Sessions Manage
+    steps:
+      - intent: ask_who_manage_sessions   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Answer Ask Sessions Manage
+    steps:
+      - intent: ask_old_vs_new_grades   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Answer Ask Sessions Manage
+    steps:
+      - intent: ask_how_manage_sessions   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen
+
+  - rule: Answer Ask RH Role
+    steps:
+      - intent: ask_role_rh   #BT
+      - action: action_lang_chain_routing
+      - action: action_listen

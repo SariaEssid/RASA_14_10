@@ -1,0 +1,60 @@
+language: fr
+assistant_id: 20250713-185142-convoluted-cap
+
+pipeline:
+  # 1. Tokenizer that preserves special characters
+  - name: WhitespaceTokenizer
+    token_pattern: r'[^\s=;,:]+|\S'
+
+  - name: actions.nlu_components.word_limit_checker.WordLimitChecker
+
+  - name: RegexFeaturizer
+
+  - name: LexicalSyntacticFeaturizer   # ⭐ ADD THIS
+
+  - name: RegexEntityExtractor # 2. RegexEntityExtractor with improved patterns
+    case_sensitive: false
+    patterns:
+      - name: "username"
+        pattern: r'(?:username|user|login|id|identifiant)\s*[=:;]\s*([^\s;,]*)'
+      - name: "password"
+        pattern: r'(?:password|pass|mdp|mot\s*de\s*passe)\s*[=:;]\s*([^\n]+)'  # Capture until newline
+      - name: "language"
+        pattern: r'(?:français|française|francaise|francais|french|anglais|english)'
+
+  - name: CountVectorsFeaturizer   # word-level
+  - name: CountVectorsFeaturizer   # char-level
+    analyzer: "char_wb"
+    min_ngram: 1
+    max_ngram: 5
+
+  - name: DIETClassifier
+    epochs: 300
+    constrain_similarities: true
+    entity_recognition: true # ✅ REQUIRED
+    learning_rate: 0.001
+    dropout: 0.2
+
+  - name: EntitySynonymMapper
+
+  - name: FallbackClassifier  # show fallback
+    threshold: 0.6       # ✅ Lowered to allow classifier to succeed before fallback
+    ambiguity_threshold: 0.1
+
+policies: # show fallback
+  - name: MemoizationPolicy
+    max_history: 5
+  - name: RulePolicy
+  - name: TEDPolicy
+    constrain_similarities: True  # ✅ Better training stability when using cross-entropy loss (the default in Rasa). + More interpretable confidence scores (since they're normalized between 0 and 1).
+    max_history: 5
+    epochs: 200
+
+regex:
+  - name: provide_credentials
+    pattern: (?i)(?:username|user|login|identifiant).*(?:password|pass|mdp|mot\s*de\s*passe)
+#    pattern: (?i)username|user|login|identifiant.*(password|pass|mdp|mot\s*de\s*passe)
+
+env_vars:
+  SQLALCHEMY_SILENCE_UBER_WARNING: "1"
+  SQLALCHEMY_WARN_20: "0"

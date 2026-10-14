@@ -1,0 +1,167 @@
+kind: pipeline
+type: docker
+name: esprit_pgpg-chatbot ci production
+
+trigger:
+  ref:
+    - refs/tags/*
+
+volumes:
+  - name: dockersock
+    host:
+      path: /var/run/docker.sock
+  - name: cache
+    host:
+      path: /tmp/cache
+
+steps:
+
+  - name: build and publish (esprit)
+    image: plugins/docker
+    environment:
+      DOCKER_BUILDKIT: 1
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+    settings:
+      username:
+        from_secret: harbor_username
+      password:
+        from_secret: harbor_password
+      dockerfile: Dockerfile-allinone
+      experimental: true
+      repo: ecr.esprit.tn/pgpg.esprit.tn/chatbot
+      registry: ecr.esprit.tn
+      tags:
+        - ${DRONE_TAG}
+        - latest
+    when:
+      ref:
+        include:
+          - refs/tags/esprit-*
+
+  - name: build and publish (esb)
+    image: plugins/docker
+    environment:
+      DOCKER_BUILDKIT: 1
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+    settings:
+      username:
+        from_secret: harbor_username
+      password:
+        from_secret: harbor_password
+      dockerfile: Dockerfile-allinone
+      experimental: true
+      repo: ecr.esprit.tn/pgpg.esprit.tn/chatbot
+      registry: ecr.esprit.tn
+      tags:
+        - ${DRONE_TAG}
+        - latest
+    when:
+      ref:
+        include:
+          - refs/tags/esb-*
+
+  - name: git-ops (patch & push) (esprit)
+    image: alpine/git
+    environment:
+      GIT_OPS_SSH_KEY:
+        from_secret: ssh_key_github_dsi-application
+    commands:
+      - mkdir -p ~/.ssh && echo "$GIT_OPS_SSH_KEY" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+      - ssh-keyscan github.com >> ~/.ssh/known_hosts
+      - git clone git@github.com:ESPRIT-DSI-OPS/esprit-dsi_gitops.git
+      - cd esprit-dsi_gitops/esprit_pgpg/prod
+      - sed -E -i "s|ecr.esprit.tn/pgpg.esprit.tn/chatbot:[^ ]+|ecr.esprit.tn/pgpg.esprit.tn/chatbot:${DRONE_TAG}|g" chatbot.yaml
+      - git config --global user.name "drone-ci"
+      - git config --global user.email "drone-ci@esprit.tn"
+      - git add .
+      - git commit -m "update pgpg-chatbot tag ${DRONE_TAG}"
+      - git push -f origin master
+    when:
+      ref:
+        include:
+          - refs/tags/esprit-*
+
+  - name: git-ops (patch & push) (esb)
+    image: alpine/git
+    environment:
+      GIT_OPS_SSH_KEY:
+        from_secret: ssh_key_github_dsi-application
+    commands:
+      - mkdir -p ~/.ssh && echo "$GIT_OPS_SSH_KEY" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+      - ssh-keyscan github.com >> ~/.ssh/known_hosts
+      - git clone git@github.com:ESPRIT-DSI-OPS/esprit-dsi_gitops.git
+      - cd esprit-dsi_gitops/esb_pgpg/prod
+      - sed -E -i "s|ecr.esprit.tn/pgpg.esprit.tn/chatbot:[^ ]+|ecr.esprit.tn/pgpg.esprit.tn/chatbot:${DRONE_TAG}|g" chatbot.yaml
+      - git config --global user.name "drone-ci"
+      - git config --global user.email "drone-ci@esprit.tn"
+      - git add .
+      - git commit -m "update pgpg-chatbot tag ${DRONE_TAG}"
+      - git push -f origin master
+    when:
+      ref:
+        include:
+          - refs/tags/esb-*
+
+  - name:  success notification
+    image: drillster/drone-email
+    settings:
+      from: Drone-CI PROD <notification-ops@esprit.tn>
+      host: smtp.office365.com
+      port: 587
+      username:
+        from_secret: email_username_outlook
+      password:
+        from_secret: email_password_outlook
+      recipients_only: true
+      recipients:
+        - seddik.bouzayani@esprit.tn
+      subject: SUCCESS - ${DRONE_STAGE_NAME} pipeline [${DRONE_TAG}]
+      body: |
+        The Pipeline ${DRONE_STAGE_NAME} has completed successfully.
+        <br>
+        Git Tag : ${DRONE_TAG} | Git Event : ${DRONE_BUILD_EVENT}
+        <br>
+        Git Branch : ${DRONE_BRANCH} | Git REF : ${DRONE_COMMIT_REF}
+        <br>
+        Git Branch Source : ${DRONE_SOURCE_BRANCH} | Git Branch Target : ${DRONE_TARGET_BRANCH}
+        <br>
+        Git Author : ${DRONE_COMMIT_AUTHOR}
+        <br>
+        Link: ${DRONE_BUILD_LINK}
+    when:
+      status:
+        - success
+
+  - name:  failure notification
+    image: drillster/drone-email
+    settings:
+      from: Drone-CI PROD <notification-ops@esprit.tn>
+      host: smtp.office365.com
+      port: 587
+      username:
+        from_secret: email_username_outlook
+      password:
+        from_secret: email_password_outlook
+      recipients_only: true
+      recipients:
+        - seddik.bouzayani@esprit.tn
+      subject: FAILURE - ${DRONE_STAGE_NAME} pipeline [${DRONE_TAG}]
+      body: |
+        The Pipeline ${DRONE_STAGE_NAME} has failed.
+        <br>
+        Git Commit : ${DRONE_TAG} | Git Event : ${DRONE_BUILD_EVENT}
+        <br>
+        Git Branch : ${DRONE_BRANCH} | Git REF : ${DRONE_COMMIT_REF}
+        <br>
+        Git Branch Source : ${DRONE_SOURCE_BRANCH} | Git Branch Target : ${DRONE_TARGET_BRANCH}
+        <br>
+        Git Author : ${DRONE_COMMIT_AUTHOR}
+        <br>
+        Link: ${DRONE_BUILD_LINK}
+    when:
+      status:
+        - failure

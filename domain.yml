@@ -1,0 +1,439 @@
+#
+# Copyright (c) 2025. ESPRIT / ESSID Saria. All rights reserved.
+#
+
+version: "3.1"
+
+intents:
+  - greet
+  - bye
+  - nlu_fallback
+  - affirm_helpful
+  - deny_helpful
+  - ask_access_resources_by_evaluator
+  - ask_update_personal_information
+  - ask_request_support_contact
+  - ask_workflow_evaluation
+  - ask_handle_automatic_evaluations
+  - ask_view_academic_comments
+  - ask_demande_reevaluation
+  - ask_historique_evaluation
+  - ask_offline_mode
+  - ask_multilingual_mode
+  - ask_present_essid_saria
+  - ask_esprit_dsi_ai
+  - ask_ranking_esprit
+  - present_pfe_platform
+  - present_pgpg_platform
+  - ask_change_password
+  - ask_about_candidature_passage_grade
+  - ask_forgot_reset_password
+  - provide_credentials
+  - affirm
+  - deny
+  - ask_resultat_dissertation
+  - ask_resultat_capsule
+  - ask_resultat_sscomp
+  - ask_resultat_final # FINAL RESULTS
+  - ask_status_deliberation_result
+  - select_comp_for_guide
+  - ask_about_esb
+  - stressed_candidat
+  - affirm_advice_1
+  - affirm_advice_2
+  - affirm_advice_3
+  - ask_concerned_grades
+  - ask_nbr_needed_positions_by_spec
+  - ask_place_examen
+  - ask_candidats_elligibles_anciennete
+  - ask_types_livrables
+  - ask_modify_deposit
+  - ask_notify_candidat
+  - ask_renew_session_pg
+  - ask_fees_inscription
+  - ask_make_up_session
+  - ask_success_candidat
+  - ask_failure_candidat
+  - ask_criteres_evaluation_sscomp
+  - ask_duration_exam
+  - reclam_no_typo
+  - ask_link_video_drive_in_pdf
+  - ask_confidentialite_delivrables
+  - ask_equality_mesures
+  - ask_success_rate
+  - ask_select_evaluator_jury
+  - ask_attach_proofs
+  - ask_role_cpgr
+  - ask_reference_period
+  - ask_level_publication
+  - ask_normal_exceptional_metrics
+  - give_comp_hierarchy
+  - give_date_by_comp
+  - ask_global_advices_pg
+  - ask_granular_advices_pg
+  - give_score_by_comp
+  - ask_plagiarism
+  - ask_procedure_pg
+  - ask_moodle
+  - present_academic_stuff
+  - ask_eval_vs_pj
+  - ask_expert_by_spec_comp
+  - ask_infos_expert_by_name
+  - how_authenticate_with_chatbot
+  - ask_modify_profile_photo
+  - ask_about_comp
+  - too_long_input
+  - ask_who_manage_sessions
+  - ask_old_vs_new_grades
+  - ask_how_manage_sessions
+  - ask_role_rh
+
+entities:
+  - username
+  - password
+  - language
+  - sscomp
+  - keyword
+  - speciality
+  - expert
+  - grade
+  - session
+  - last_intent
+  - forward_level
+
+responses:
+  utter_confused_affirm:
+    - text: |
+        👍 D'accord,
+        🔄 Autre mission pour moi ? Je suis tout ouïe… et 100% café virtuel ☕🤖.
+
+actions:
+  - action_semantic_qa
+  - action_dynamic_faq
+  - action_log_feedback
+  - action_dynamic_final_unit_results
+  - action_bilan_final_results
+  - action_congrat_final_results
+  - action_deliberation_final_results
+  - action_set_session
+  - action_set_user
+  - action_get_dynamic_response
+  - action_select_button
+  - action_get_next_details_response
+  - action_answer_from_json
+  - action_bot_typing
+  - action_get_response_from_json
+  - action_pg_infos_pdf
+  - action_evaluators_pjs
+  - action_pg_hierarchy_context
+  - action_maintain_conv_flow
+  - action_academic_stuff
+  - action_lang_chain_routing
+
+# Slots for Feedbacks
+slots:
+  session_id:
+    type: text
+    initial_value: null
+    mappings: []
+
+  user_id:
+    type: text
+    initial_value: null
+    mappings: []
+
+  username:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: username
+
+  password:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: password
+  jwt:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: jwt
+
+  roles:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: roles
+
+  last_question:
+    type: text
+    initial_value: ""
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  last_last_question:
+    type: text
+    influence_conversation: false
+    initial_value: ""
+    mappings:
+      - type: custom
+
+  last_answer:
+    type: text
+    initial_value: ""
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  last_last_answer:
+    type: text
+    initial_value: ""
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  predicted_intent:
+    type: text
+    initial_value: ""
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+  full_name:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: full_name
+
+  id_candidat:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: id_candidat
+
+  sscomp:
+    type: categorical # Les slots catégoriques sont souvent considérés comme des "caractéristiques" du dialogue.
+    values:
+      - supp_peda
+      - prod_rdi
+      - doss
+      - test_qcm
+      - pres_doss
+      - diss_jury
+      - eval_pres_se
+      - eval_se
+      - eval_pres_ptp
+      - eval_ptp
+      - qcm_all
+      - caps_peda_all
+      - diss_all
+      - seq_ens_all
+      - plat_tp_all
+      - prod_peda_all
+      - entr_jury_all
+      - first_comp
+      - second_comp
+      - third_comp
+    influence_conversation: false # Ceci indique que la valeur du slot ne doit pas influencer le prochain état du dialogue.
+    mappings:
+      - type: from_entity
+        entity: sscomp
+        conditions:
+          - active_loop: null # Le slot est rempli dès qu'une entité sscomp est vue.
+
+  language:
+    type: categorical
+    values:
+      - fr
+      - en
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: language
+        conditions:
+          - active_loop: null
+
+  keyword:
+    type: categorical
+    values:
+      - mdp
+      - id
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: keyword
+        conditions:
+          - active_loop: null  # Only extract outside forms
+
+  grade:
+    type: categorical
+    values:
+      - professeur_tech
+      - assistant_tech
+      - maitre_tech
+      - tech
+      - efa
+      - efs
+      - efm
+      - ef
+      - elcc2
+      - elcc1
+      - elcc
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: grade
+        conditions:
+          - active_loop: null  # Only extract outside forms
+
+  session:
+    type: categorical
+    values:
+      - session_24-25
+      - session_25-26
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: session
+        conditions:
+          - active_loop: null  # Only extract outside forms
+
+  speciality:
+    type: categorical
+    values:
+      - gc
+      - elct_mkn
+      - tic
+      - ged
+      - math
+      - lcom
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: speciality
+        conditions:
+          - active_loop: null  # Only extract outside forms
+
+  expert:
+    type: categorical
+    values:
+      - abderrazek_hachani
+      - adel_brik
+      - ahmed_makki_latrech
+      - asma_karoui
+      - belhassen_guettat
+      - chokri_chaaraoui
+      - douha_arfeoui
+      - hajer_berhouma
+      - imen_guebebia
+      - imen_kochbati
+      - joseph_hajjeji
+      - mabrouka_dchicha
+      - maher_jaziri
+      - maher_mouakher
+      - manel_medhioub
+      - med_bouakline
+      - nadia_ajailia
+      - najla_rejab
+      - rahma_bouraoui
+      - rim_alouan
+      - safa_zhioua_cherif
+      - sami_montassar
+      - sonia_batis
+      - soumaya_mbarek
+      - taoufik_chaouachi
+      - yosr_ghozzi
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: expert
+        conditions:
+          - active_loop: null  # Only extract outside forms
+
+
+  active_flow:
+    type: categorical
+    values:
+      - none       # Default state
+      - composante # When in composante flow
+      - note_test_qcm
+      - note_diss_fr
+      - note_diss_en
+      - note_caps_fr
+      - note_caps_en
+      - note_prod_rdi
+      - note_supp_peda
+      - note_doss
+      - note_pres_doss
+      - note_diss_jury
+      - note_eval_pres_se
+      - note_eval_se
+      - note_eval_pres_ptp
+      - note_eval_ptp
+      - note_qcm_all
+      - note_caps_peda_all
+      - note_diss_all
+      - note_seq_ens_all
+      - note_plat_tp_all
+      - note_prod_peda_all
+      - note_entr_jury_all
+      - note_first_comp
+      - note_second_comp
+      - note_third_comp
+      - congrats # FINAL RESULTS
+      - deliberation
+      - guide_comp
+      - selected_comp
+      - selected_advice_plan
+      - give_advice_1
+      - give_advice_2
+      - give_advice_3
+      - eval_grid
+      - tree_hierarchy
+      - no_typos
+      - pg_advices
+    mappings:  # Required in newer Rasa versions
+      - type: custom
+
+  forward_level:
+    type: categorical
+    values:
+      - short
+      - detailed
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: detail_level
+        conditions:
+          - active_loop: null
+
+  last_intent:
+    type: categorical
+    values:
+      - give_date_by_comp
+      - ask_global_advices_pg
+      - give_score_by_comp
+    influence_conversation: false
+    mappings:
+      - type: from_entity
+        entity: last_intent
+        conditions:
+          - active_loop: null
+
+  last_action:
+    type: text
+    initial_value: ""
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true

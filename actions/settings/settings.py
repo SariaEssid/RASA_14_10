@@ -1,0 +1,149 @@
+"""
+actions/settings/settings.py
+
+@author ESSID Saria | Copyright (c) 2025. ESPRIT
+"""
+
+from __future__ import annotations
+from typing import Optional
+from pydantic import BaseSettings, validator
+from actions.settings.config import API_URL
+
+import logging
+import os
+
+log = logging.getLogger("rasa-actions")
+
+class Settings(BaseSettings):
+
+    log.info(f"IMPORTANT TAG -> Loaded env constants under API_URL : {API_URL}")
+
+    # -------------------------
+    # Pydantic v1 config
+    # -------------------------
+    class Config:
+        env_file = ".env"
+        extra = "ignore"
+        # In v1, we usually specify case sensitivity here if needed
+        case_sensitive = False
+
+    # -------------------------
+    # Project
+    # -------------------------
+    PROJECT_ROOT: str = os.path.dirname(
+        os.path.dirname(os.path.abspath(__file__))
+    )
+
+    # -------------------------
+    # RASA-RAG Service
+    # -------------------------
+    RASA_RAG_TOKEN = os.getenv("RASA_RAG_TOKEN")
+
+    # -------------------------
+    # General
+    # -------------------------
+    DRIVE_LINK: str = "https://drive.google.com/uc?export=download&id"
+    semantic_threshold: float = 0.9
+    FOLLOWUP_THRESHOLD = 0.55
+    log_level: str = "INFO"
+    ANONYMIZATION_SALT: Optional[str] = os.getenv("ANONYMIZATION_SALT")
+
+    # -------------------------
+    # AI Forge
+    # -------------------------
+    MODEL_API_KEYS: Optional[str] = os.getenv("MODEL_API_KEYS")
+    LLM_BASE_URL: Optional[str] = os.getenv("LLM_BASE_URL")
+    LLM_MODEL: Optional[str] = os.getenv("LLM_MODEL")
+
+    # -------------------------
+    # Circuit Breaker
+    # -------------------------
+    CIRCUIT_FAILURE_THRESHOLD: int = 5
+    CIRCUIT_RECOVERY_TIMEOUT: int = 120
+
+    # -------------------------
+    # Performance
+    # -------------------------
+    MAX_USER_QUESTION_WORDS: int = 300
+    MAX_CONNECTIONS: int = 200
+    MAX_KEEPALIVE_CONNECTIONS: int = 50
+    KEEPALIVE_EXPIRY: float = 30.0
+
+    # -------------------------
+    # Timeout
+    # -------------------------
+    TIMEOUT_CONNECT: float = 5.0
+    TIMEOUT_READ: float = 10.0
+    TIMEOUT_WRITE: float = 10.0
+    TIMEOUT_POOL: float = 5.0
+
+    # -------------------------
+    # Network
+    # -------------------------
+    RETRY_NETWORK_FAILURES: int = 3
+    MAX_REQUEST_ROLLING_RETRIES: int = 100
+
+    # -------------------------
+    # Security
+    # -------------------------
+    TOTAL_WAIT_SECONDS: int = 125
+    INVALID_CREDENTIALS_TENTATIVE_COUNT: int = 5
+
+    # -------------------------
+    # File Paths
+    # -------------------------
+    # Positions - Statistics - Grades
+    SPECIALITIES_JSON_PATH: Optional[str] = os.getenv("JSON_PATH_FILES") + "needed_positions_by_speciality.json"
+    RESULTS_STAT_JSON_PATH: Optional[str] = os.getenv("JSON_PATH_FILES") + "statistiques_resultats_pg.json"
+    GRADES_JSON_PATH: Optional[str] = os.getenv("JSON_PATH_FILES") + "concerned_grades.json"
+
+    # Hierarchy
+    PATH_HIERARCY_ALL: Optional[str] = os.getenv("PDF_PATH_FILES") + "hierarchy_all.pdf"
+    PATH_HIERARCY: Optional[str] = os.getenv("PDF_PATH_FILES") + "hierarchy.pdf"
+    PATH_HIERARCY_DATE: Optional[str] = os.getenv("PDF_PATH_FILES") + "hierarchy_date.pdf"
+    PATH_HIERARCY_DURATION: Optional[str] = os.getenv("PDF_PATH_FILES") + "hierarchy_duration.pdf"
+    PATH_HIERARCY_EXAM_KIND: Optional[str] = os.getenv("PDF_PATH_FILES") + "hierarchy_kind_exam.pdf"
+    PATH_HIERARCY_PLACE: Optional[str] = os.getenv("PDF_PATH_FILES") + "hierarchy_place.pdf"
+    PATH_HIERARCY_SCORE: Optional[str] = os.getenv("PDF_PATH_FILES") + "hierarchy_score.pdf"
+
+    # Experts
+    PATH_HIERARCY_EVALS_JURYS_MRKDN_VS: Optional[str] = os.getenv("MARKDOWN_PATH_FILES") + "hierarchy_evals_jurys_vs.md"
+    PATH_HIERARCY_EVALS_JURYS_MRKDN_BY: Optional[str] = os.getenv("MARKDOWN_PATH_FILES") + "hierarchy_evals_jurys_by.md"
+    PATH_HIERARCY_EVALS_JURYS_MRKDN_NAME: Optional[str] = os.getenv("MARKDOWN_PATH_FILES") + "hierarchy_evals_jurys_name.md"
+    PATH_HIERARCY_EVALS_JURYS_MRKDN_ALL: Optional[str] = os.getenv("MARKDOWN_PATH_FILES") + "hierarchy_evals_jurys_all.md"
+
+    # -------------------------
+    # Models
+    # -------------------------
+
+    semantic_model_name: str = "all-MiniLM-L6-v2"  # BEFORE
+    # semantic_model_name = "./models/semantic_model"  # AFTER
+
+    PHI_MODEL_PATH: str = os.getenv("PHI3_PATH") 
+    LLM_PHI3_API_URL: str = "http://localhost:8000/generate"
+
+    ACTIVE_SESSION: str = "2025-2026"
+
+    # -------------------------
+    # Tokens
+    # -------------------------
+    FUSION_QUESTIONS: int = 100
+    CACHE_TIMEOUT_SECONDS: int = 300
+
+    # -------------------------
+    # Chunks for RAG
+    # -------------------------
+    CHUNK_SIZE = 768  # Réduit la taille pour de meilleurs "hits" sur les paires clé/valeur
+    CHUNK_OVERLAP = 128
+
+    # -------------------------
+    # Validators
+    # -------------------------
+    @validator("semantic_threshold")
+    def validate_threshold(cls, v):
+        if not 0 <= v <= 1:
+            raise ValueError("Threshold must be between 0 and 1")
+        return v
+
+
+settings = Settings()

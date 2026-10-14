@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+.Python
+env/
+venv/
+lib/
+log/
+bin/
+include/
+share/
+models/
+local/
+*.gguf
+# Jupyter Notebooks
+.ipynb_checkpoints
+*.ipynb
+
+# Rasa specific
+.rasa/
+rasa-temp-*/
+*.tar.gz
+*.zip
+data/__init__.py # Ignore this if it gets created by accident, data should be in .yml files
+test_results/
+results/
+dialogue_graphs/
+.stories/
+.nlu/
+
+# Logs
+*.log
+logs/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.bak
+*.swo
+*.DS_Store # macOS
+Thumbs.db # Windows
+
+# Database (if using one locally)
+*.db
+*.sqlite
+*.sqlite3
+
+# Test coverage
+.coverage
+.pytest_cache/
+
+# Distribution / Wheel
+dist/
+build/
+*.egg-info/
+
+# Jupyter Lab (if used)
+.ipynb_checkpoints
+.jupyter/

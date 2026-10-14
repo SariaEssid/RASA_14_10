@@ -1,0 +1,475 @@
+#
+# Copyright (c) 2005. ESPRIT / ESSID Saria. All rights reserved.
+#
+version: "3.1"
+stories:
+######################################################################## STATIC FLOWS
+  #HERE-1 : DONE
+
+
+
+
+############################################################################# NOTE Dissertation FR+EN
+  - story: French Dissertation Flow
+    steps:
+      - intent: ask_resultat_dissertation
+        entities:
+        - language: fr
+      - slot_was_set:
+        - language: fr
+        - active_flow: "note_diss_fr"
+      - action: action_dynamic_faq
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+      - slot_was_set:
+        - active_flow: "note_diss_fr"
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - story: English Dissertation Flow
+    steps:
+      - intent: ask_resultat_dissertation
+        entities:
+        - language: en
+      - slot_was_set:
+        - language: en
+        - active_flow: "note_diss_en"
+      - action: action_dynamic_faq
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+      - slot_was_set:
+        - active_flow: "note_diss_en"
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - story: Note Dissertation FR|EN flow deny
+    steps:
+      - intent: ask_resultat_dissertation
+        entities:
+        - language
+      - slot_was_set:
+        - language: en  # or "fr"
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "note_diss_en"
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# NOTE Capsule FR+EN
+  - story: French Capsule Flow
+    steps:
+      - intent: ask_resultat_capsule
+        entities:
+        - language: fr
+      - slot_was_set:
+        - language: fr
+        - active_flow: "note_caps_fr"
+      - action: action_dynamic_faq
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+      - slot_was_set:
+        - active_flow: "note_caps_fr"
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - story: English Capsule Flow
+    steps:
+      - intent: ask_resultat_capsule
+        entities:
+        - language: en
+      - slot_was_set:
+        - language: en
+        - active_flow: "note_caps_en"
+      - action: action_dynamic_faq
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+      - slot_was_set:
+        - active_flow: "note_diss_en"
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  - story: Note Capsule FR|EN flow deny
+    steps:
+      - intent: ask_resultat_capsule
+        entities:
+        - language
+      - slot_was_set:
+        - language: en  # or "fr"
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "note_caps_en"
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+      - intent: deny
+      - action: action_dynamic_faq
+
+############################################################################# NOTE All/SS-Composante
+  #############################################
+  # ✅ Generic flow for all All-Composantes
+  #############################################
+  ### Connaissances de Bases
+  - story: Note SS-Composante <Connaissances de Bases> generic flow
+    steps:
+      - intent: ask_resultat_sscomp
+        entities:
+        - sscomp: first_comp
+      - slot_was_set:
+        - sscomp: first_comp
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "note_first_comp"
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+
+  ### Production
+  - story: Note SS-Composante <Production> generic flow
+    steps:
+      - intent: ask_resultat_sscomp
+        entities:
+        - sscomp: second_comp
+      - slot_was_set:
+        - sscomp: second_comp
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "note_second_comp"
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+
+  ### Dossier & Entretien
+  - story: Note SS-Composante <Dossier & Entretien> generic flow
+    steps:
+      - intent: ask_resultat_sscomp
+        entities:
+        - sscomp: third_comp
+      - slot_was_set:
+        - sscomp: third_comp
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "note_third_comp"
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+
+  #############################################
+  # ✅ Generic flow for all SS-Composantes
+  #############################################
+  ### Test QCM
+  - story: Note SS-Composante <Test QCM> generic flow
+    steps:
+      - intent: ask_resultat_sscomp
+        entities:
+        - sscomp: test_qcm
+      - slot_was_set:
+        - sscomp: test_qcm
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "note_test_qcm"
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+      - slot_was_set:
+        - active_flow: "note_test_qcm"
+      - intent: affirm
+      - action: action_bilan_final_results
+
+  ### QCM TOTALE
+  - story: Note SS-Composante <QCM TOTALE> generic flow
+    steps:
+      - intent: ask_resultat_sscomp
+        entities:
+        - sscomp: qcm_all
+      - slot_was_set:
+        - sscomp: qcm_all
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "note_qcm_all"
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+
+  ### Capsules Pédagogiques TOTALES
+  - story: Note SS-Composante <Capsules Pédagogiques TOTALES> generic flow
+    steps:
+      - intent: ask_resultat_sscomp
+        entities:
+        - sscomp: caps_peda_all
+      - slot_was_set:
+        - sscomp: caps_peda_all
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "note_caps_peda_all"
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+
+  ### Dissertations TOTALES
+  - story: Note SS-Composante <Dissertations TOTALES> generic flow
+    steps:
+      - intent: ask_resultat_sscomp
+        entities:
+        - sscomp: diss_all
+      - slot_was_set:
+        - sscomp: diss_all
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "note_diss_all"
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+
+  ### Séquences Enseignements TOTALES
+  - story: Note SS-Composante <Séquences Enseignements TOTALES> generic flow
+    steps:
+      - intent: ask_resultat_sscomp
+        entities:
+        - sscomp: seq_ens_all
+      - slot_was_set:
+        - sscomp: seq_ens_all
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "note_seq_ens_all"
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+
+  ### Plateforme de TP TOTALES
+  - story: Note SS-Composante <Plateforme de TP TOTALES> generic flow
+    steps:
+      - intent: ask_resultat_sscomp
+        entities:
+        - sscomp: plat_tp_all
+      - slot_was_set:
+        - sscomp: plat_tp_all
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "note_plat_tp_all"
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+
+  ### Production Pédagogiques TOTALES
+  - story: Note SS-Composante <Production Pédagogiques TOTALES> generic flow
+    steps:
+      - intent: ask_resultat_sscomp
+        entities:
+        - sscomp: prod_peda_all
+      - slot_was_set:
+        - sscomp: prod_peda_all
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "note_prod_peda_all"
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+
+  ### Production RDI
+  - story: Note SS-Composante <Production RDI> generic flow
+    steps:
+      - intent: ask_resultat_sscomp
+        entities:
+        - sscomp: prod_rdi
+      - slot_was_set:
+        - sscomp: prod_rdi
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "note_prod_rdi"
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+
+  ### Supports Pédagogiques
+  - story: Note SS-Composante <Supports Pédagogiques> generic flow
+    steps:
+      - intent: ask_resultat_sscomp
+        entities:
+        - sscomp: supp_peda
+      - slot_was_set:
+        - sscomp: supp_peda
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "note_supp_peda"
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+
+  ### Evaluation Présentation SE
+  - story: Note SS-Composante <Evaluation Présentation SE> generic flow
+    steps:
+      - intent: ask_resultat_sscomp
+        entities:
+        - sscomp: eval_pres_se
+      - slot_was_set:
+        - sscomp: eval_pres_se
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "note_eval_pres_se"
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+
+  ### Evaluation SE
+  - story: Note SS-Composante <Evaluation SE> generic flow
+    steps:
+      - intent: ask_resultat_sscomp
+        entities:
+        - sscomp: eval_se
+      - slot_was_set:
+        - sscomp: eval_se
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "note_eval_se"
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+
+  ### Evaluation Présentation PTP
+  - story: Note SS-Composante <Evaluation Présentation PTP> generic flow
+    steps:
+      - intent: ask_resultat_sscomp
+        entities:
+        - sscomp: eval_pres_ptp
+      - slot_was_set:
+        - sscomp: eval_pres_ptp
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "note_eval_pres_ptp"
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+
+  ### Evaluation PTP
+  - story: Note SS-Composante <Evaluation SE> generic flow
+    steps:
+      - intent: ask_resultat_sscomp
+        entities:
+        - sscomp: eval_ptp
+      - slot_was_set:
+        - sscomp: eval_ptp
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "note_eval_ptp"
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+
+  ### Présentation Dossier
+  - story: Note SS-Composante <Présentation Dossier> generic flow
+    steps:
+      - intent: ask_resultat_sscomp
+        entities:
+        - sscomp: pres_doss
+      - slot_was_set:
+        - sscomp: pres_doss
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "note_pres_doss"
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+
+  ### Discussion jury
+  - story: Note SS-Composante <Discussion jury> generic flow
+    steps:
+      - intent: ask_resultat_sscomp
+        entities:
+        - sscomp: diss_jury
+      - slot_was_set:
+        - sscomp: diss_jury
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "note_diss_jury"
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+
+  ### Entretien avec Jury TOTALES
+  - story: Note SS-Composante <Entretien avec Jury TOTALES> generic flow
+    steps:
+      - intent: ask_resultat_sscomp
+        entities:
+        - sscomp: entr_jury_all
+      - slot_was_set:
+        - sscomp: entr_jury_all
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "note_entr_jury_all"
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+
+  ### Dossier
+  - story: Note SS-Composante <Dossier> generic flow
+    steps:
+      - intent: ask_resultat_sscomp
+        entities:
+        - sscomp: doss
+      - slot_was_set:
+        - sscomp: doss
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "note_doss"
+      - intent: provide_credentials
+      - action: action_dynamic_final_unit_results
+
+############################################################################# FINAL RESULTS
+  - story: congrat_final_results_flow_affirm
+    steps:
+      - intent: ask_resultat_final
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "congrats"
+      - intent: provide_credentials
+      - action: action_congrat_final_results
+      - slot_was_set:
+        - active_flow: "congrats"
+      - intent: affirm
+      - action: action_bilan_final_results
+
+############################################################################# DELIBERATION FINAL RESULTS
+  - story: deliberation_final_results_flow_affirm
+    steps:
+      - intent: ask_status_deliberation_result
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "deliberation" # CONFIRMED
+      - intent: affirm
+      - action: action_deliberation_final_results
+      - slot_was_set:
+        - active_flow: "congrats"
+      - intent: provide_credentials
+      - action: action_congrat_final_results
+      - slot_was_set:
+        - active_flow: "congrats"  # CONFIRMED
+      - intent: affirm
+      - action: action_bilan_final_results
+
+############################################################################# SELECT COMPOSANTE
+  - story: Guide About Candidature Passage de Grade
+    steps:
+      - intent: ask_about_candidature_passage_grade
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "guide_comp"
+      - intent: select_comp_for_guide
+      - action: action_select_button
+      - slot_was_set:
+        - active_flow: "selected_comp"
+      - intent: affirm
+      - action: action_get_next_details_response
+
+############################################################################# STRESSED CANDIDAT
+  - story: Guide for Stressed Candidat
+    steps:
+      - intent: stressed_candidat
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "selected_advice_plan"
+
+############################################################################# Give Advices for CANDIDAT
+  - story: Give Advices for Candidat
+    steps:
+      - intent: affirm_advice_1
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "give_advice_1"
+      - intent: affirm
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "give_advice_2"
+      - intent: affirm
+      - action: action_get_dynamic_response
+
+############################################################################# SELECT SS COMPOSANTE FRO EVALUATION GRID
+  - story: Guide About Criterias of evaluation
+    steps:
+      - intent: ask_criteres_evaluation_sscomp
+      - action: action_get_dynamic_response
+      - slot_was_set:
+        - active_flow: "eval_grid"
+      - intent: select_comp_for_guide
+      - action: action_select_button

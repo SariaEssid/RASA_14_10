@@ -1,0 +1,130 @@
+kind: pipeline
+type: docker
+name: esprit_chatbot-rasa ci quality
+
+trigger:
+  branch:
+    - release/*
+  event:
+    - push
+    - custom
+
+volumes:
+  - name: dockersock
+    host:
+      path: /var/run/docker.sock
+  - name: cache
+    host:
+      path: /tmp/cache
+
+
+steps:
+  # - name: train rasa model
+  #   image: python:3.9
+  #   commands:
+  #     - pip install --upgrade pip
+  #     - pip install -r requirements.txt
+  #     - ulimit -n 65535
+  #     - rasa train --num-threads 4
+  #     - python scripts/build_faiss_index.py
+  #     # Ensure latest.tar.gz exists (VERY IMPORTANT)
+  #     - ls -l models
+  #     - MODEL_FILE=$(ls models/*.tar.gz | head -n 1)
+  #     - cp $MODEL_FILE models/latest.tar.gz
+  #     - ls -l models
+  - name: build and publish
+    image: plugins/docker
+    environment:
+      DOCKER_BUILDKIT: 1
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+    settings:
+      username:
+        from_secret: harbor_username
+      password:
+        from_secret: harbor_password
+      dockerfile: Dockerfile
+      experimental: true
+      repo: 192.168.0.128:5000/esprit-chatbot.esprit.tn/chatbot-rasa
+      registry: 192.168.0.128:5000
+      insecure: true
+      tags:
+        - ${DRONE_COMMIT:0:7}-qa
+
+  - name: git-ops (patch & push)
+    image: alpine/git
+    environment:
+      GIT_OPS_SSH_KEY:
+        from_secret: ssh_key_github_dsi-application
+    commands:
+      - mkdir -p ~/.ssh && echo "$GIT_OPS_SSH_KEY" > ~/.ssh/id_ed25519 && chmod 600 ~/.ssh/id_ed25519
+      - ssh-keyscan github.com >> ~/.ssh/known_hosts
+      - git clone git@github.com:ESPRIT-DSI-OPS/esprit-dsi_gitops.git
+      - cd esprit-dsi_gitops/esprit-chatbot/qa
+      - sed -E -i "s|192.168.0.128:5000/esprit-chatbot.esprit.tn/chatbot-rasa:[^ ]+|192.168.0.128:5000/esprit-chatbot.esprit.tn/chatbot-rasa:${DRONE_COMMIT:0:7}-qa|g" chatbot.yaml
+      - git config --global user.name "drone-ci"
+      - git config --global user.email "drone-ci.qa@esprit.tn"
+      - git add .
+      - git commit -m "update esprit_chatbot-rasa  ${DRONE_COMMIT:0:7}-qa"
+      - git push -f origin master
+
+  - name:  success notification
+    image: drillster/drone-email
+    settings:
+      from: Drone-CI QA <notification-ops-qa@esprit.tn>
+      host: smtp.office365.com
+      port: 587
+      username:
+        from_secret: email_username_outlook
+      password:
+        from_secret: email_password_outlook
+      recipients_only: true
+      recipients:
+        - seddik.bouzayani@esprit.tn
+      subject: SUCCESS - ${DRONE_STAGE_NAME} pipeline [${DRONE_COMMIT:0:7}-qa]
+      body: |
+        The Pipeline ${DRONE_STAGE_NAME} has completed successfully.
+        <br>
+        Git Commit : ${DRONE_COMMIT:0:7}-qa | Git Event : ${DRONE_BUILD_EVENT}
+        <br>
+        Git Branch : ${DRONE_BRANCH} | Git REF : ${DRONE_COMMIT_REF}
+        <br>
+        Git Branch Source : ${DRONE_SOURCE_BRANCH} | Git Branch Target : ${DRONE_TARGET_BRANCH}
+        <br>
+        Git Author : ${DRONE_COMMIT_AUTHOR}
+        <br>
+        Link: ${DRONE_BUILD_LINK}
+    when:
+      status:
+        - success
+
+  - name:  failure notification
+    image: drillster/drone-email
+    settings:
+      from: Drone-CI QA <notification-ops-qa@esprit.tn>
+      host: smtp.office365.com
+      port: 587
+      username:
+        from_secret: email_username_outlook
+      password:
+        from_secret: email_password_outlook
+      recipients_only: true
+      recipients:
+        - seddik.bouzayani@esprit.tn
+      subject: FAILURE ${DRONE_STAGE_NAME} pipeline [${DRONE_COMMIT:0:7}-qa]
+      body: |
+        The Pipeline ${DRONE_STAGE_NAME} has failed.
+        <br>
+        Git Commit : ${DRONE_COMMIT:0:7}-qa | Git Event : ${DRONE_BUILD_EVENT}
+        <br>
+        Git Branch : ${DRONE_BRANCH} | Git REF : ${DRONE_COMMIT_REF}
+        <br>
+        Git Branch Source : ${DRONE_SOURCE_BRANCH} | Git Branch Target : ${DRONE_TARGET_BRANCH}
+        <br>
+        Git Author : ${DRONE_COMMIT_AUTHOR}
+        <br>
+        Link: ${DRONE_BUILD_LINK}
+    when:
+      status:
+        - failure
