@@ -89,7 +89,7 @@ class ActionEvaluatorsAndPJ(BaseDynamicLLMAction):
                 tag = "NAME"
                 log_info_text(action_label, tag)
             elif intent == ActiveIntents.ASK_EVAL_VS_PJ.value:
-                filename, context = get_context_from_langchain_rag(action_label, question, ["evalsjurys"], [], nbr_chunks)
+                filename, context = await get_context_from_langchain_rag(action_label, question, ["evalsjurys"], [], nbr_chunks)
                 prompt = get_extended_bot_mission(question, context)
                 tag = "VS"
                 log_info_text(action_label, tag)
@@ -106,7 +106,7 @@ class ActionEvaluatorsAndPJ(BaseDynamicLLMAction):
                 maintained_intent = last_intent
                 last_last_user_question, last_answer = get_last_conversation(tracker, action_label)
                 if tag == 'VS':
-                    filename, context, prompt = get_filename_context_prompt(action_label, last_last_user_question, last_answer, native_question, maintained_intent)
+                    filename, context, prompt = await get_filename_context_prompt(action_label, last_last_user_question, last_answer, native_question, maintained_intent)
                 else:
                     prompt = get_detailed_standard_full_last_conv_bot_mission_with_context(context, native_question, last_last_user_question, last_answer)
 
@@ -182,7 +182,7 @@ class ActionAcademicStuff(BaseDynamicLLMAction):
                     detected_slots= detected_slots
                 )
 
-                filename, context, question = get_filename_context(ctx)
+                filename, context, question = await get_filename_context(ctx)
                 prompt = get_detailed_standard_full_last_conv_bot_mission_with_context(context, native_question, last_second_question, last_answer)
 
             else:
@@ -197,7 +197,7 @@ class ActionAcademicStuff(BaseDynamicLLMAction):
                     detected_slots=detected_slots
                 )
 
-                filename, context, question = get_filename_context(ctx)
+                filename, context, question = await get_filename_context(ctx)
                 prompt = get_extended_bot_mission(question, context)
 
             context += get_academic_stuff_rules()
@@ -292,7 +292,7 @@ class ActionLangChainRouting(BaseDynamicLLMAction):
                 log_info_text(f"{DIRECT_HAND_FLAG}", f" {action_label} - SUMMARY : {native_question}")
 
                 question = rewrite_using_slots_prod_grade(native_question, detected_slots, get_synonyms_lookup(action_label, entities), ALL_ENTITIES_MAPPINGS)
-                filename, context, prompt = get_filename_context_prompt(action_label, last_second_question, last_answer, question, maintained_intent)
+                filename, context, prompt = await get_filename_context_prompt(action_label, last_second_question, last_answer, question, maintained_intent)
 
             else:
                 log_info_text(f"{DIRECT_HAND_LONG}", f"{GO_SHORT}")
@@ -307,7 +307,7 @@ class ActionLangChainRouting(BaseDynamicLLMAction):
                 log_info_text(action_label, f"nbr_chunks 1 : {nbr_chunks} - {domains}")
                 decision_mode = "short"
                 question = rewrite_using_slots_prod_grade(native_question, detected_slots, get_synonyms_lookup(action_label, entities), ALL_ENTITIES_MAPPINGS)
-                filename, context = get_context_from_langchain_rag(action_label, question, domains, [], nbr_chunks)
+                filename, context = await get_context_from_langchain_rag(action_label, question, domains, [], nbr_chunks)
 
                 log_params(action_label, domains, is_hard, intent)
 
@@ -430,7 +430,11 @@ def format_values(value: str) -> str:
     return ", ".join(f"```{item.strip().upper()}```" for item in value.split(","))
 
 def search_expert_all_roles(target_name, markdown_text):
-    target_name_clean = target_name.lower().strip()
+    target_name_clean = target_name.casefold().strip()
+
+    if not target_name_clean:
+        return None
+
     sections = re.split(r'(##+ .*\n)', markdown_text)
     found_assignments = []
 
@@ -447,24 +451,30 @@ def search_expert_all_roles(target_name, markdown_text):
             current_role = "Expert"
 
             for index, row in df.iterrows():
+                if all(
+                        re.fullmatch(r"\s*:?-{3,}:?\s*", str(value))
+                        for value in row
+                ):
+                    continue
+
                 first_col_val = str(row.iloc[0]).strip()
 
                 if first_col_val and first_col_val not in ["nan", "-", ""]:
                     # 1. Remove Markdown stars (**)
-                    clean_text = first_col_val.replace("*'", "")
+                    clean_text = first_col_val.replace("*", "")
                     # 2. Remove leading numbers, dots, and hyphens (e.g., "2.2 - ")
                     current_role = re.sub(r'^[\d.\s\-–—]+', '', clean_text).strip()
 
                 elif len(row) > 1:
                     second_col_val = str(row.iloc[1]).strip()
                     if second_col_val and second_col_val not in ["nan", "-", ""]:
-                        clean_text = second_col_val.replace("*'", "")
+                        clean_text = second_col_val.replace("*", "")
                         current_role = re.sub(r'^[\d.\s\-–—]+', '', clean_text).strip()
 
                 for col in df.columns:
                     # Clean the column header as well
-                    col_clean = col.replace("*'", "").strip()
-                    cell_value = str(row[col]).lower()
+                    col_clean = col.replace("*", "").strip()
+                    cell_value = str(row[col]).casefold()
 
                     if target_name_clean in cell_value:
                         found_assignments.append(f"```{title}``` de l'épreuve ```{current_role}``` pour la spécialité ```{col_clean}```")
@@ -527,7 +537,7 @@ def detect_domain(question: str):
             domains.append("ef")
             log_info_text("👉 👉   my-domain-B : ", f"{str(domains)}")
 
-        if "langue" in question or "Agrégé" in question:
+        if "langue" in question or "agrégé" in question:
             domains.append("elcc")
             log_info_text("👉 👉   my-domain-C : ", f"{str(domains)}")
 
@@ -547,13 +557,16 @@ def get_native_question_domain_nbr_chunks(last_intent, native_question, intent, 
 
     domains = []
 
-    if intent and last_intent and domains:
-        log_info_text("#####PIKA intent-1 : ", last_intent + " - " + intent + " -> " + str(domains))
-
     if intent == ActiveIntents.NLU_FALLBACK.value:
-        log_info_text(DIRECT_HAND_FLAG, "PIKA LAST-INTENT : " + last_intent)
-        native_question, domains, nbr_chunks = get_util_values(last_intent, active_flow, sscomp_entity_values, native_question, domains, nbr_chunks)
-    else :
+        if last_intent:
+            log_info_text(DIRECT_HAND_FLAG, "PIKA LAST-INTENT : " + last_intent)
+            native_question, domains, nbr_chunks = get_util_values(
+                last_intent, active_flow, sscomp_entity_values,
+                native_question, domains, nbr_chunks
+            )
+        else:
+            log_info_text(DIRECT_HAND_FLAG, "PIKA LAST-INTENT is unavailable")
+    else:
         log_info_text(DIRECT_HAND_FLAG, "PIKA INTENT : " + intent)
         if (
                 last_intent and
@@ -571,11 +584,11 @@ def get_native_question_domain_nbr_chunks(last_intent, native_question, intent, 
         else:
             native_question, domains, nbr_chunks = get_util_values(intent, active_flow, sscomp_entity_values, native_question, domains, nbr_chunks)
 
-    log_info_text("##### PIKA FINAL DOMAINS : ", intent + " -> " + str(domains))
+    log_info_text("##### PIKA FINAL DOMAINS : ", str(intent) + " -> " + str(domains))
 
     return native_question, domains, nbr_chunks
 
-def get_filename_context(ctx: MyConversationContextSlots):
+async def get_filename_context(ctx: MyConversationContextSlots):
 
     question, grades, specialities = get_grade_speciality_values_from_synonyms(ctx.action_label,
                                                                                ctx.native_question,
@@ -589,7 +602,7 @@ def get_filename_context(ctx: MyConversationContextSlots):
 
     grades = mapping_old_new_grades(grades)
 
-    filename, context = get_context_from_langchain_rag(ctx.action_label, question, domains, grades, ctx.nbr_chunks)
+    filename, context = await get_context_from_langchain_rag(ctx.action_label, question, domains, grades, ctx.nbr_chunks)
 
     log_info_text(ctx.action_label, f"domains : {str(domains)}")
     log_info_text(ctx.action_label, f"NEW grades : {grades}")

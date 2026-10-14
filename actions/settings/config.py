@@ -24,6 +24,10 @@ def validate_environment():
         "ANONYMIZATION_SALT",
         "LANG_CHAIN_URL",
         "RASA_RAG_TOKEN",
+        "JSON_PATH_FILES",
+        "PDF_PATH_FILES",
+        "MARKDOWN_PATH_FILES",
+        "PHI3_PATH",
     ]
 
     missing = [

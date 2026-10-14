@@ -5,6 +5,7 @@ actions/settings/settings.py
 """
 
 from __future__ import annotations
+from pathlib import Path
 from typing import Optional
 from pydantic import BaseSettings, validator
 from actions.settings.config import API_URL
@@ -13,6 +14,10 @@ import logging
 import os
 
 log = logging.getLogger("rasa-actions")
+
+JSON_FILES_DIR = Path(os.environ["JSON_PATH_FILES"].strip())
+PDF_FILES_DIR = Path(os.environ["PDF_PATH_FILES"].strip())
+MARKDOWN_FILES_DIR = Path(os.environ["MARKDOWN_PATH_FILES"].strip())
 
 class Settings(BaseSettings):
 
@@ -93,24 +98,24 @@ class Settings(BaseSettings):
     # File Paths
     # -------------------------
     # Positions - Statistics - Grades
-    SPECIALITIES_JSON_PATH: Optional[str] = os.getenv("JSON_PATH_FILES") + "needed_positions_by_speciality.json"
-    RESULTS_STAT_JSON_PATH: Optional[str] = os.getenv("JSON_PATH_FILES") + "statistiques_resultats_pg.json"
-    GRADES_JSON_PATH: Optional[str] = os.getenv("JSON_PATH_FILES") + "concerned_grades.json"
+    SPECIALITIES_JSON_PATH: Optional[str] = str(JSON_FILES_DIR / "needed_positions_by_speciality.json")
+    RESULTS_STAT_JSON_PATH: Optional[str] = str(JSON_FILES_DIR / "statistiques_resultats_pg.json")
+    GRADES_JSON_PATH: Optional[str] = str(JSON_FILES_DIR / "concerned_grades.json")
 
     # Hierarchy
-    PATH_HIERARCY_ALL: Optional[str] = os.getenv("PDF_PATH_FILES") + "hierarchy_all.pdf"
-    PATH_HIERARCY: Optional[str] = os.getenv("PDF_PATH_FILES") + "hierarchy.pdf"
-    PATH_HIERARCY_DATE: Optional[str] = os.getenv("PDF_PATH_FILES") + "hierarchy_date.pdf"
-    PATH_HIERARCY_DURATION: Optional[str] = os.getenv("PDF_PATH_FILES") + "hierarchy_duration.pdf"
-    PATH_HIERARCY_EXAM_KIND: Optional[str] = os.getenv("PDF_PATH_FILES") + "hierarchy_kind_exam.pdf"
-    PATH_HIERARCY_PLACE: Optional[str] = os.getenv("PDF_PATH_FILES") + "hierarchy_place.pdf"
-    PATH_HIERARCY_SCORE: Optional[str] = os.getenv("PDF_PATH_FILES") + "hierarchy_score.pdf"
+    PATH_HIERARCY_ALL: Optional[str] = str(PDF_FILES_DIR / "hierarchy_all.pdf")
+    PATH_HIERARCY: Optional[str] = str(PDF_FILES_DIR / "hierarchy.pdf")
+    PATH_HIERARCY_DATE: Optional[str] = str(PDF_FILES_DIR / "hierarchy_date.pdf")
+    PATH_HIERARCY_DURATION: Optional[str] = str(PDF_FILES_DIR / "hierarchy_duration.pdf")
+    PATH_HIERARCY_EXAM_KIND: Optional[str] = str(PDF_FILES_DIR / "hierarchy_kind_exam.pdf")
+    PATH_HIERARCY_PLACE: Optional[str] = str(PDF_FILES_DIR / "hierarchy_place.pdf")
+    PATH_HIERARCY_SCORE: Optional[str] = str(PDF_FILES_DIR / "hierarchy_score.pdf")
 
     # Experts
-    PATH_HIERARCY_EVALS_JURYS_MRKDN_VS: Optional[str] = os.getenv("MARKDOWN_PATH_FILES") + "hierarchy_evals_jurys_vs.md"
-    PATH_HIERARCY_EVALS_JURYS_MRKDN_BY: Optional[str] = os.getenv("MARKDOWN_PATH_FILES") + "hierarchy_evals_jurys_by.md"
-    PATH_HIERARCY_EVALS_JURYS_MRKDN_NAME: Optional[str] = os.getenv("MARKDOWN_PATH_FILES") + "hierarchy_evals_jurys_name.md"
-    PATH_HIERARCY_EVALS_JURYS_MRKDN_ALL: Optional[str] = os.getenv("MARKDOWN_PATH_FILES") + "hierarchy_evals_jurys_all.md"
+    PATH_HIERARCY_EVALS_JURYS_MRKDN_VS: Optional[str] = str(MARKDOWN_FILES_DIR / "hierarchy_evals_jurys_vs.md")
+    PATH_HIERARCY_EVALS_JURYS_MRKDN_BY: Optional[str] = str(MARKDOWN_FILES_DIR / "hierarchy_evals_jurys_by.md")
+    PATH_HIERARCY_EVALS_JURYS_MRKDN_NAME: Optional[str] = str(MARKDOWN_FILES_DIR / "hierarchy_evals_jurys_name.md")
+    PATH_HIERARCY_EVALS_JURYS_MRKDN_ALL: Optional[str] = str(MARKDOWN_FILES_DIR / "hierarchy_evals_jurys_all.md")
 
     # -------------------------
     # Models
@@ -119,7 +124,7 @@ class Settings(BaseSettings):
     semantic_model_name: str = "all-MiniLM-L6-v2"  # BEFORE
     # semantic_model_name = "./models/semantic_model"  # AFTER
 
-    PHI_MODEL_PATH: str = os.getenv("PHI3_PATH") 
+    PHI_MODEL_PATH: str = os.getenv("PHI3_PATH")
     LLM_PHI3_API_URL: str = "http://localhost:8000/generate"
 
     ACTIVE_SESSION: str = "2025-2026"

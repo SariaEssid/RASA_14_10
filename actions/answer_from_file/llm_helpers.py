@@ -5,12 +5,12 @@ actions/answer_from_file/llm_helpers.py
 """
 
 from __future__ import annotations
+import httpx
 
 import os
 from datetime import datetime, timezone
 from typing import List, cast
 
-import requests
 import yaml
 
 from actions.actions import normalize_text, check_is_excluded, remove_excluded_patterns, START_WORDS
@@ -29,6 +29,8 @@ from actions.settings.config import LANG_CHAIN_URL
 from actions.settings.settings import settings
 from actions.utils.slots_helpers import get_slots_to_set_last_answer_flow, get_return_slots_for_conversations
 
+class RAGServiceUnavailable(Exception):
+    pass
 
 def verif_hard_qe():
     keywords = [
@@ -336,26 +338,31 @@ def get_sscomp_values(question, synonyms_lookup):
     sscomp_entity_values = get_clean_slot_values(question, synonyms_lookup["sscomp"]) # SYNONYMS_LOOKUP["session"]
     return sscomp_entity_values
 
-def get_context_from_langchain_rag(
+async def get_context_from_langchain_rag(
     action_label, native_question, domains, grades, nbr_chunks
 ):
     try:
-        response = requests.post(
-            f"{LANG_CHAIN_URL}/rag/context",
-            headers={"X-Service-Token": settings.RASA_RAG_TOKEN},
-            json={
-                "question": native_question,
-                "domains": domains,
-                "grades": grades,
-                "nbr_chunks": nbr_chunks,
-            },
-            timeout=(5, 60)
-        )
-        response.raise_for_status()
+        timeout = httpx.Timeout(60.0, connect=5.0)
 
-        data = response.json()
-        if not isinstance(data, dict):
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            response = await client.post(
+                f"{LANG_CHAIN_URL}/rag/context",
+                headers={"X-Service-Token": settings.RASA_RAG_TOKEN},
+                json={
+                    "question": native_question,
+                    "domains": domains,
+                    "grades": grades,
+                    "nbr_chunks": nbr_chunks,
+                },
+            )
+            response.raise_for_status()
+            data = response.json()
+
+        if not isinstance(data, dict) or not isinstance(data.get("answer"), str):
             raise ValueError("RAG service returned an unexpected response")
+
+        if not data["answer"].strip():
+            raise ValueError("RAG service returned empty context")
 
         context = data.get("answer") or ""
         filename = data.get("source_file") or "unknown"
@@ -365,21 +372,23 @@ def get_context_from_langchain_rag(
         log_info_text(action_label, f"filename: {filename}")
         log_info_text(action_label, f"nbr_chunks: {nbr_chunks}")
 
-    except (requests.exceptions.RequestException, ValueError) as e:
-        response = getattr(e, "response", None)
+        return filename, context
+
+    except (httpx.HTTPError, ValueError) as exc:
+        response = getattr(exc, "response", None)
         status_code = getattr(response, "status_code", None)
 
-        context = ""
-        filename = "unknown"
-
         payload = get_payload_rasa_rag_service()
-        payload["botReply"] = str(e)
+        payload["botReply"] = "RAG context retrieval failed"
         notify_team_leader_by_technical_problem(payload)
-        log_exception_text(action_label, f"Failed to retrieve RAG context: {status_code} - {e}")
+        log_exception_text(
+            action_label,
+            f"Failed to retrieve RAG context: {status_code} - {exc}",
+        )
 
-    return filename, context
+        raise RAGServiceUnavailable("RAG context retrieval failed") from exc
 
-def get_filename_context_prompt(action_label, last_last_user_question, last_answer, full_history, maintained_intent):
+async def get_filename_context_prompt(action_label, last_last_user_question, last_answer, full_history, maintained_intent):
     full_history = f"""{full_history.strip()}"""
     last_question = full_history.split(":")[0].strip()
 
@@ -394,7 +403,7 @@ def get_filename_context_prompt(action_label, last_last_user_question, last_answ
     if domains:
         log_info_text(action_label, "============================================> domains : " + str(domains))
 
-    filename, context = get_context_from_langchain_rag(action_label, full_history, domains, [], 2)
+    filename, context = await get_context_from_langchain_rag(action_label, full_history, domains, [], 2)
     if maintained_intent == ActiveIntents.ASK_PROCEDURE_PG.value:
         log_info_text(action_label, "============================================> SARSA SHORT : " + last_question)
         prompt = get_short_standard_full_last_conv_bot_mission_with_context_alerts(context, last_question, last_last_user_question, last_answer, "")
