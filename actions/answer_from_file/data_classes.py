@@ -3,9 +3,14 @@ actions/answer_from_file/data_classes.py
 
 @author ESSID Saria | Copyright (c) 2025. ESPRIT
 """
+from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Any
+
+from regex import Match
+
 
 @dataclass
 class MyConversationContext:
@@ -32,3 +37,15 @@ class RoutingDecision:
     mode: str            # "short" | "detailed"
     score: float
     reasons: dict
+
+@dataclass
+class RequiredValuesShortAnswers:
+    action_label: str
+    intent: str | None
+    last_intent: str | None
+    domains: list[str]
+    native_question: str
+    new_nbr_chunks: int
+    detected_slots: list[str]
+    entities: list[str]
+    is_hard: Match[str] | None | Match[bytes]

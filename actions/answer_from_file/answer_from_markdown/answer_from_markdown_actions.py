@@ -18,7 +18,8 @@ from rasa_sdk.executor import CollectingDispatcher
 
 from actions.actions import append_friendly_intro_to_answer, get_local_header, normalize_text, \
     get_extracted_slots
-from actions.answer_from_file.answer_from_file_actions import BaseDynamicLLMAction, load_util_values, fusion_and_call_llm, log_params, track_values
+from actions.answer_from_file.answer_from_file_actions import BaseDynamicLLMAction, load_util_values, \
+    fusion_and_call_llm, log_params, track_values
 from actions.answer_from_file.answer_from_markdown.experts_rag.action_llm_markdown import get_markdown_content
 from actions.answer_from_file.answer_from_markdown.experts_rag.markdown_store import \
     parse_markdown_sections, table_to_narrative_e, ROW_ANCHORS, extract_cell_value, parse_specialities_from_question, \
@@ -28,7 +29,7 @@ from actions.answer_from_file.bot_missions import get_standard_bot_mission, \
     get_detailed_standard_full_last_conv_bot_mission_with_context, \
     get_extended_bot_mission_without_duplication, fusion_question, get_extended_bot_mission_with_alerts_with_roles, \
     give_link_label
-from actions.answer_from_file.data_classes import MyConversationContextSlots
+from actions.answer_from_file.data_classes import MyConversationContextSlots, RequiredValuesShortAnswers
 from actions.answer_from_file.llm_helpers import detect_composantes, \
     rewrite_using_slots_prod_grade, get_synonyms_lookup, get_grade_speciality_values, \
     get_sscomp_values, get_context_from_langchain_rag, get_filename_context_prompt, \
@@ -51,19 +52,21 @@ from actions.utils.slots_helpers import get_return_slots_for_conversations, get_
 nbr_chunks = settings.RAG_DEFAULT_CHUNKS
 top_k = settings.EXPERT_TABLE_TOP_K
 
+
 class ActionEvaluatorsAndPJ(BaseDynamicLLMAction):
 
     def name(self) -> Text:
         return ActionsNome.ACTION_EVALUATORS_PJS.value
 
     async def run(
-        self,
-        dispatcher: CollectingDispatcher,
-        tracker: Tracker,
-        domains_old: list[dict[str, Any]]
+            self,
+            dispatcher: CollectingDispatcher,
+            tracker: Tracker,
+            domains_old: list[dict[str, Any]]
     ) -> List[Dict[Text, Any]]:
 
-        action_label, start_time, native_question, last_second_question, payload_tech_error, user_id, session_id, confidence, intent = load_util_values(tracker, ActionsLabel.PY_RESPOND_FROM_PDF_FOR_EVAL_PJ.value)
+        action_label, start_time, native_question, last_second_question, payload_tech_error, user_id, session_id, confidence, intent = load_util_values(
+            tracker, ActionsLabel.PY_RESPOND_FROM_PDF_FOR_EVAL_PJ.value)
         last_intent = tracker.get_slot("last_intent")
         native_question = normalize_text(native_question)
 
@@ -71,13 +74,16 @@ class ActionEvaluatorsAndPJ(BaseDynamicLLMAction):
 
         try:
             maintained_intent = intent
-            slot_speciality_value, slot_grade_value, slot_session_value, slot_sscomp_value, slot_expert_value = get_extracted_slots(action_label, tracker)
+            slot_speciality_value, slot_grade_value, slot_session_value, slot_sscomp_value, slot_expert_value = get_extracted_slots(
+                action_label, tracker)
 
             entities = ["grade", "speciality", "sscomp", "expert"]
             synonyms_lookup = get_synonyms_lookup(action_label, entities)
 
-            detected_slots = get_entity_values(native_question, synonyms_lookup, entities) # [slot_speciality_value, slot_grade_value, slot_sscomp_value, slot_expert_value]
-            question = rewrite_using_slots_prod_grade(native_question, detected_slots, synonyms_lookup, ALL_ENTITIES_MAPPINGS)
+            detected_slots = get_entity_values(native_question, synonyms_lookup,
+                                               entities)  # [slot_speciality_value, slot_grade_value, slot_sscomp_value, slot_expert_value]
+            question = rewrite_using_slots_prod_grade(native_question, detected_slots, synonyms_lookup,
+                                                      ALL_ENTITIES_MAPPINGS)
 
             if intent == ActiveIntents.ASK_EXPERT_BY_SPEC_COMP.value:
                 context = get_ask_experts_by_comp_prompt(action_label, question)
@@ -90,7 +96,8 @@ class ActionEvaluatorsAndPJ(BaseDynamicLLMAction):
                 tag = "NAME"
                 log_info_text(action_label, tag)
             elif intent == ActiveIntents.ASK_EVAL_VS_PJ.value:
-                filename, context = await get_context_from_langchain_rag(action_label, question, ["evalsjurys"], [], nbr_chunks)
+                filename, context = await get_context_from_langchain_rag(action_label, question, ["evalsjurys"], [],
+                                                                         nbr_chunks)
                 prompt = get_extended_bot_mission(question, context)
                 tag = "VS"
                 log_info_text(action_label, tag)
@@ -100,16 +107,21 @@ class ActionEvaluatorsAndPJ(BaseDynamicLLMAction):
                 tag = "OTHER"
                 log_info_text(action_label, tag)
 
-            decision_infos = await get_decision_mode(self, dispatcher, tracker, action_label, native_question, last_second_question, intent, last_intent)
+            decision_infos = await get_decision_mode(self, dispatcher, tracker, action_label, native_question,
+                                                     last_second_question, intent, last_intent)
             decision_mode = decision_infos.mode
 
             if decision_mode == 'detailed' and intent == ActiveIntents.NLU_FALLBACK.value:
                 maintained_intent = last_intent
                 last_last_user_question, last_answer = get_last_conversation(tracker, action_label)
                 if tag == 'VS':
-                    filename, context, prompt = await get_filename_context_prompt(action_label, last_last_user_question, last_answer, native_question, maintained_intent)
+                    filename, context, prompt = await get_filename_context_prompt(action_label, last_last_user_question,
+                                                                                  last_answer, native_question,
+                                                                                  maintained_intent)
                 else:
-                    prompt = get_detailed_standard_full_last_conv_bot_mission_with_context(context, native_question, last_last_user_question, last_answer)
+                    prompt = get_detailed_standard_full_last_conv_bot_mission_with_context(context, native_question,
+                                                                                           last_last_user_question,
+                                                                                           last_answer)
 
             track_prompt_decision_params(action_label, prompt, decision_infos)
 
@@ -121,15 +133,20 @@ class ActionEvaluatorsAndPJ(BaseDynamicLLMAction):
             )
 
             elapsed = round(time.time() - start_time, 2)
-            send_multiple_messages_forwarded_by_buttons(dispatcher, f"{get_local_header(elapsed, f'EVAL-PJ | {tag}', settings.PATH_HIERARCY_EVALS_JURYS_MRKDN_NAME)} {append_friendly_intro_to_answer(answer)}",FEEDBACK_BUTTONS)
+            send_multiple_messages_forwarded_by_buttons(dispatcher,
+                                                        f"{get_local_header(elapsed, f'EVAL-PJ | {tag}', settings.PATH_HIERARCY_EVALS_JURYS_MRKDN_NAME)} {append_friendly_intro_to_answer(answer)}",
+                                                        FEEDBACK_BUTTONS)
 
             await log_chat(user_id, session_id, native_question, answer, intent, confidence)
-            return get_return_slots_for_conversations(get_slots_to_set_eval_pj(my_last_sscomp_value, slot_speciality_value, last_second_question, native_question, answer, maintained_intent, decision_mode))
+            return get_return_slots_for_conversations(
+                get_slots_to_set_eval_pj(my_last_sscomp_value, slot_speciality_value, last_second_question,
+                                         native_question, answer, maintained_intent, decision_mode))
 
         except Exception as unexpected:
             answer = unexpected_exception_dsi(dispatcher, action_label, payload_tech_error, str(unexpected))
             await log_chat(user_id, session_id, native_question, answer, intent, confidence)
             return [SlotSet("last_answer", f"UNEXPECTED_ERROR: {str(unexpected)}")]
+
 
 class ActionAcademicStuff(BaseDynamicLLMAction):
 
@@ -137,13 +154,14 @@ class ActionAcademicStuff(BaseDynamicLLMAction):
         return ActionsNome.ACTION_ACADEMIC_STUFF.value
 
     async def run(
-        self,
-        dispatcher: CollectingDispatcher,
-        tracker: Tracker,
-        domains: list[dict[str, Any]]
+            self,
+            dispatcher: CollectingDispatcher,
+            tracker: Tracker,
+            domains: list[dict[str, Any]]
     ) -> List[Dict[Text, Any]]:
 
-        action_label, start_time, native_question, last_second_question, payload_tech_error, user_id, session_id, confidence, intent = load_util_values(tracker, ActionsLabel.PY_ACADEMIC_STUFF_FROM_MD.value)
+        action_label, start_time, native_question, last_second_question, payload_tech_error, user_id, session_id, confidence, intent = load_util_values(
+            tracker, ActionsLabel.PY_ACADEMIC_STUFF_FROM_MD.value)
         last_intent = tracker.get_slot("last_intent")
         final_native_question = native_question
 
@@ -151,11 +169,13 @@ class ActionAcademicStuff(BaseDynamicLLMAction):
             maintained_intent = intent
             get_extracted_slots(action_label, tracker)
             entities = ["grade", "speciality"]
-            detected_slots = ["assistant_tech", "technologue", "maitre_tech", "professeur_tech", "efm", "efs", "efa", "ef", "elcc", "elcc1", "elcc2"]
+            detected_slots = ["assistant_tech", "technologue", "maitre_tech", "professeur_tech", "efm", "efs", "efa",
+                              "ef", "elcc", "elcc1", "elcc2"]
 
             log_info_text("SUMMARY : ", f"{action_label} - {native_question} - {str(detected_slots)} - {str(entities)}")
 
-            decision_infos = await get_decision_mode(self, dispatcher, tracker, action_label, native_question, last_second_question, intent, last_intent)
+            decision_infos = await get_decision_mode(self, dispatcher, tracker, action_label, native_question,
+                                                     last_second_question, intent, last_intent)
             decision_mode = decision_infos.mode
             if decision_mode == "detailed":
                 log_info_text(f"{DIRECT_HAND_LONG}", f"{GO_DETAILS}")
@@ -174,16 +194,18 @@ class ActionAcademicStuff(BaseDynamicLLMAction):
                 final_native_question = native_question
 
                 ctx = MyConversationContextSlots(
-                    tracker= tracker,
+                    tracker=tracker,
                     nbr_chunks=nbr_chunks,
-                    action_label= action_label,
-                    native_question= native_question,
-                    entities= entities,
-                    detected_slots= detected_slots
+                    action_label=action_label,
+                    native_question=native_question,
+                    entities=entities,
+                    detected_slots=detected_slots
                 )
 
                 filename, context, question = await get_filename_context(ctx)
-                prompt = get_detailed_standard_full_last_conv_bot_mission_with_context(context, native_question, last_second_question, last_answer)
+                prompt = get_detailed_standard_full_last_conv_bot_mission_with_context(context, native_question,
+                                                                                       last_second_question,
+                                                                                       last_answer)
 
             else:
                 log_info_text(f"{DIRECT_HAND_LONG}", f"{GO_SHORT}")
@@ -211,15 +233,20 @@ class ActionAcademicStuff(BaseDynamicLLMAction):
             )
 
             elapsed = round(time.time() - start_time, 2)
-            send_multiple_messages_forwarded_by_buttons(dispatcher, f"{get_local_header(elapsed, 'STUFF', filename)} {append_friendly_intro_to_answer(answer)}",FEEDBACK_BUTTONS)
+            send_multiple_messages_forwarded_by_buttons(dispatcher,
+                                                        f"{get_local_header(elapsed, 'STUFF', filename)} {append_friendly_intro_to_answer(answer)}",
+                                                        FEEDBACK_BUTTONS)
 
             await log_chat(user_id, session_id, final_native_question, answer, intent, confidence)
-            return get_return_slots_for_conversations(get_slots_to_set_maintain_conv(last_second_question, final_native_question, answer, maintained_intent, decision_mode))
+            return get_return_slots_for_conversations(
+                get_slots_to_set_maintain_conv(last_second_question, final_native_question, answer, maintained_intent,
+                                               decision_mode))
 
         except Exception as unexpected:
             answer = unexpected_exception_dsi(dispatcher, action_label, payload_tech_error, str(unexpected))
             await log_chat(user_id, session_id, final_native_question, answer, intent, confidence)
             return [SlotSet("last_answer", f"UNEXPECTED_ERROR: {str(unexpected)}")]
+
 
 class ActionLangChainRouting(BaseDynamicLLMAction):
 
@@ -227,14 +254,15 @@ class ActionLangChainRouting(BaseDynamicLLMAction):
         return ActionsNome.ACTION_LANG_CHAIN_ROUTING.value
 
     async def run(
-        self,
-        dispatcher: CollectingDispatcher,
-        tracker: Tracker,
+            self,
+            dispatcher: CollectingDispatcher,
+            tracker: Tracker,
             my_domains: List[Dict[str, Any]]
     ) -> List[Dict[Text, Any]]:
 
         decision_infos = None
-        action_label, start_time, native_question, last_second_question, payload_tech_error, user_id, session_id, confidence, intent = load_util_values(tracker, ActionsLabel.PY_RESPOND_FROM_LANG_CHAIN.value)
+        action_label, start_time, native_question, last_second_question, payload_tech_error, user_id, session_id, confidence, intent = load_util_values(
+            tracker, ActionsLabel.PY_RESPOND_FROM_LANG_CHAIN.value)
 
         exist_class, last_intent, active_flow = skip_unrelated_action(self, tracker, action_label, intent)
 
@@ -246,24 +274,25 @@ class ActionLangChainRouting(BaseDynamicLLMAction):
         if active_flow:
             log_info_text(action_label, "active_flow : " + str(active_flow))
 
-        slot_speciality_value, slot_grade_value, slot_session_value, slot_sscomp_value, slot_expert_value = get_extracted_slots(action_label, tracker)
+        slot_speciality_value, slot_grade_value, slot_session_value, slot_sscomp_value, slot_expert_value = get_extracted_slots(
+            action_label, tracker)
         detected_slots = [slot_speciality_value, slot_grade_value, slot_sscomp_value, slot_expert_value]
         entities = ["sscomp", "speciality", "grade"]
 
         sscomp_entity_values = get_comp_values_from_synonyms(action_label, native_question, entities)
         log_info_text(action_label, "sscomp_entity_values : " + str(sscomp_entity_values))
 
-        if intent and last_intent :
+        if intent and last_intent:
             log_info_text(action_label, "INTENTS : " + intent + " - " + last_intent)
 
         try:
             maintained_intent = intent
 
-            native_question, domains, nbr_chunks = get_native_question_domain_nbr_chunks(last_intent,
-                                                                                        native_question, intent,
-                                                                                        active_flow,
-                                                                                        sscomp_entity_values,
-                                                                                        settings.RAG_DEFAULT_CHUNKS)
+            native_question, domains, new_nbr_chunks = get_native_question_domain_nbr_chunks(last_intent,
+                                                                                             native_question, intent,
+                                                                                             active_flow,
+                                                                                             sscomp_entity_values,
+                                                                                             settings.RAG_DEFAULT_CHUNKS)
             log_info_text(action_label, "FLOWW - domains : " + str(domains))
 
             decision_mode = "short"
@@ -272,11 +301,14 @@ class ActionLangChainRouting(BaseDynamicLLMAction):
             if last_second_question:
                 log_info_text(action_label, "INSIDE last_second_question : " + last_second_question)
 
-                decision_infos = await get_decision_mode(self, dispatcher, tracker, action_label, native_question, last_second_question, intent, last_intent)
+                decision_infos = await get_decision_mode(self, dispatcher, tracker, action_label, native_question,
+                                                         last_second_question, intent, last_intent)
                 decision_mode = decision_infos.mode
 
             if decision_mode == "detailed":
-                maintained_intent, last_last_user_question, last_answer = track_values(tracker, action_label, last_intent, last_second_question, intent)
+                maintained_intent, last_last_user_question, last_answer = track_values(tracker, action_label,
+                                                                                       last_intent,
+                                                                                       last_second_question, intent)
 
                 native_question = await fusion_and_call_llm(
                     self,
@@ -290,39 +322,31 @@ class ActionLangChainRouting(BaseDynamicLLMAction):
 
                 log_info_text(f"{DIRECT_HAND_FLAG}", f" {action_label} - SUMMARY : {native_question}")
 
-                question = rewrite_using_slots_prod_grade(native_question, detected_slots, get_synonyms_lookup(action_label, entities), ALL_ENTITIES_MAPPINGS)
-                filename, context, prompt = await get_filename_context_prompt(action_label, last_second_question, last_answer, question, maintained_intent)
+                question = rewrite_using_slots_prod_grade(native_question, detected_slots,
+                                                          get_synonyms_lookup(action_label, entities),
+                                                          ALL_ENTITIES_MAPPINGS)
+                filename, context, prompt = await get_filename_context_prompt(action_label, last_second_question,
+                                                                              last_answer, question, maintained_intent)
 
             else:
-                log_info_text(f"{DIRECT_HAND_LONG}", f"{GO_SHORT}")
-                log_info_text("INTENT: ", f"{intent} - {last_intent} - {domains}")
-
                 if intent == ActiveIntents.NLU_FALLBACK.value:
                     maintained_intent = last_intent
-
-                if intent == ActiveIntents.HOW_AUTHENTICATE_WITH_CHATBOT or (last_intent and last_intent in ActiveIntents.RESULTS_INTENTS and intent not in ActiveIntents.ALL_LLM_INTENTS_LANG_CHAIN):
-                    domains = ["chatbot"]
-
-                log_info_text(action_label, f"nbr_chunks 1 : {nbr_chunks} - {domains}")
                 decision_mode = "short"
-                question = rewrite_using_slots_prod_grade(native_question, detected_slots, get_synonyms_lookup(action_label, entities), ALL_ENTITIES_MAPPINGS)
-                filename, context = await get_context_from_langchain_rag(action_label, question, domains, [], nbr_chunks)
 
-                log_params(action_label, domains, is_hard, intent)
+                ctx_answer = RequiredValuesShortAnswers(
+                    action_label=action_label,
+                    intent=intent,
+                    last_intent=last_intent,
+                    domains=domains,
+                    native_question=native_question,
+                    new_nbr_chunks=new_nbr_chunks,
+                    detected_slots=detected_slots,
+                    entities=entities,
+                    is_hard=is_hard
+                )
 
-                if is_hard or (intent and intent in ActiveIntents.ALL_LLM_INTENTS_LANG_CHAIN_EXTEND) or (last_intent and last_intent in ActiveIntents.RESULTS_INTENTS):
-                    log_info_text(action_label, "HERE .")
+                prompt, filename = await get_short_Answers(ctx_answer)
 
-                    if intent == ActiveIntents.ASK_PROCEDURE_PG.value:
-                        prompt = get_extended_bot_mission_with_alerts(question, context, give_link_label())
-                    elif intent == ActiveIntents.ASK_ACCESS_RESOURCES_BY_EVALUATOR.value:
-                        prompt = get_extended_bot_mission_with_alerts_with_roles(question, context)
-                    else:
-                        prompt = get_extended_bot_mission_without_duplication(question, context)
-                else:
-                    prompt = get_standard_bot_mission(question, context)
-
-            # show_my_text(action_label, context)
             track_prompt_decision_params(action_label, prompt, decision_infos)
             log_info_text(action_label, "🎯 PIKO - : " + "1")
             answer = await self.call_llm_safe(
@@ -333,15 +357,62 @@ class ActionLangChainRouting(BaseDynamicLLMAction):
             )
 
             elapsed = round(time.time() - start_time, 2)
-            send_multiple_messages_forwarded_by_buttons(dispatcher, f"{get_local_header(elapsed, 'LANG-CHAIN', filename)} {append_friendly_intro_to_answer(answer)}",FEEDBACK_BUTTONS)
+            send_multiple_messages_forwarded_by_buttons(dispatcher,
+                                                        f"{get_local_header(elapsed, 'LANG-CHAIN', filename)} {append_friendly_intro_to_answer(answer)}",
+                                                        FEEDBACK_BUTTONS)
 
             await log_chat(user_id, session_id, native_question, answer, intent, confidence)
-            return get_return_slots_for_conversations(get_slots_to_set_maintain_active_flow(last_second_question, native_question, answer, maintained_intent, decision_mode, active_flow))
+            return get_return_slots_for_conversations(
+                get_slots_to_set_maintain_active_flow(last_second_question, native_question, answer, maintained_intent,
+                                                      decision_mode, active_flow))
 
         except Exception as unexpected:
             answer = unexpected_exception_dsi(dispatcher, action_label, payload_tech_error, str(unexpected))
             await log_chat(user_id, session_id, native_question, answer, intent, confidence)
             return get_return_slots_for_conversations(get_slots_to_set_last_answer_flow(active_flow, answer))
+
+
+async def get_short_Answers(ctx: RequiredValuesShortAnswers):
+    action_label = ctx.action_label
+    intent = ctx.intent
+    last_intent = ctx.last_intent
+    domains = ctx.domains
+    native_question = ctx.native_question
+    new_nbr_chunks = ctx.new_nbr_chunks
+    detected_slots = ctx.detected_slots
+    entities = ctx.entities
+    is_hard = ctx.is_hard
+
+    log_info_text(f"{DIRECT_HAND_LONG}", f"{GO_SHORT}")
+    log_info_text("INTENT: ", f"{intent} - {last_intent} - {domains}")
+
+    if intent == ActiveIntents.HOW_AUTHENTICATE_WITH_CHATBOT.value or (
+            last_intent and last_intent in ActiveIntents.RESULTS_INTENTS and intent not in ActiveIntents.ALL_LLM_INTENTS_LANG_CHAIN):
+        domains = ["chatbot"]
+
+    log_info_text(action_label, f"nbr_chunks 1 : {new_nbr_chunks} - {domains}")
+
+    question = rewrite_using_slots_prod_grade(native_question, detected_slots,
+                                              get_synonyms_lookup(action_label, entities), ALL_ENTITIES_MAPPINGS)
+    filename, context = await get_context_from_langchain_rag(action_label, question, domains, [], new_nbr_chunks)
+
+    log_params(action_label, domains, is_hard, intent)
+
+    if is_hard or (intent and intent in ActiveIntents.ALL_LLM_INTENTS_LANG_CHAIN_EXTEND) or (
+            last_intent and last_intent in ActiveIntents.RESULTS_INTENTS):
+        log_info_text(action_label, "HERE .")
+
+        if intent == ActiveIntents.ASK_PROCEDURE_PG.value:
+            prompt = get_extended_bot_mission_with_alerts(question, context, give_link_label())
+        elif intent == ActiveIntents.ASK_ACCESS_RESOURCES_BY_EVALUATOR.value:
+            prompt = get_extended_bot_mission_with_alerts_with_roles(question, context)
+        else:
+            prompt = get_extended_bot_mission_without_duplication(question, context)
+    else:
+        prompt = get_standard_bot_mission(question, context)
+
+    return prompt, filename
+
 
 def get_ask_experts_by_comp_prompt(action_label, question):
     log_info_text("🔴🔴🔴🔴🔴", "🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴")
@@ -375,7 +446,7 @@ def get_ask_experts_by_comp_prompt(action_label, question):
 
             log_info_text(action_label, str(target_sps))
             log_info_text(action_label, str(section_anchors))
-            log_info_text("🔴 3: " , composante + "\n")
+            log_info_text("🔴 3: ", composante + "\n")
 
             for line in full_narrative.splitlines():
                 if "LIGNE_OFFICIELLE" not in line:
@@ -418,15 +489,17 @@ def get_ask_experts_by_comp_prompt(action_label, question):
         context = f"""
 ## Composantes : {composantes_text}
 ## Spécialités : {specialites_text}
-    
+
 ## Données :
 {evaluators_text}"""
-    else :
+    else:
         context = markdown_raw
     return context
 
+
 def format_values(value: str) -> str:
     return ", ".join(f"```{item.strip().upper()}```" for item in value.split(","))
+
 
 def search_expert_all_roles(target_name, markdown_text):
     target_name_clean = target_name.casefold().strip()
@@ -476,7 +549,8 @@ def search_expert_all_roles(target_name, markdown_text):
                     cell_value = str(row[col]).casefold()
 
                     if target_name_clean in cell_value:
-                        found_assignments.append(f"```{title}``` de l'épreuve ```{current_role}``` pour la spécialité ```{col_clean}```")
+                        found_assignments.append(
+                            f"```{title}``` de l'épreuve ```{current_role}``` pour la spécialité ```{col_clean}```")
 
     if not found_assignments:
         return None
@@ -489,8 +563,8 @@ def search_expert_all_roles(target_name, markdown_text):
         assignments_str = "\n- ".join(unique_assignments)
         return f"```{target_name}``` occupe les fonctions suivantes :\n- {assignments_str}"
 
-def get_infos_by_expert_name(action_label, tracker):
 
+def get_infos_by_expert_name(action_label, tracker):
     experts_raw = list(tracker.get_latest_entity_values("expert"))
     experts = list(dict.fromkeys(experts_raw))
     log_info_text(action_label, "🎯 experts : " + str(experts))
@@ -513,6 +587,7 @@ def get_infos_by_expert_name(action_label, tracker):
 
     return list_expert
 
+
 def get_grade_speciality_values_from_synonyms(action_label, native_question, detected_slots, entities):
     synonyms_lookup = get_synonyms_lookup(action_label, entities)
     question = rewrite_using_slots_prod_grade(native_question, detected_slots, synonyms_lookup, ALL_ENTITIES_MAPPINGS)
@@ -521,10 +596,12 @@ def get_grade_speciality_values_from_synonyms(action_label, native_question, det
     grade_entity_values, speciality_entity_values = get_grade_speciality_values(question, synonyms_lookup)
     return question, grade_entity_values, speciality_entity_values
 
+
 def get_comp_values_from_synonyms(action_label, native_question, entities):
     synonyms_lookup = get_synonyms_lookup(action_label, entities)
     sscomp_entity_values = get_sscomp_values(native_question, synonyms_lookup)
     return sscomp_entity_values
+
 
 def detect_domain(question: str):
     question = question.lower()
@@ -532,7 +609,6 @@ def detect_domain(question: str):
     log_info_text("👉 👉   my-domain-A : ", f"{question} - {str(domains)}")
     if "procedure " not in question and "procédure" not in question:
         if "formateur" in question or "technologue" in question:
-
             domains.append("ef")
             log_info_text("👉 👉   my-domain-B : ", f"{str(domains)}")
 
@@ -543,16 +619,16 @@ def detect_domain(question: str):
     log_info_text("👉 👉   my-domain-D : ", f"{str(domains)}")
     return domains
 
-def get_native_question_domain_nbr_chunks(last_intent, native_question, intent, active_flow, sscomp_entity_values, nbr_chunks):
 
+def get_native_question_domain_nbr_chunks(last_intent, native_question, intent, active_flow, sscomp_entity_values, old_nbr_chunks):
     domains = []
 
     if intent == ActiveIntents.NLU_FALLBACK.value:
         if last_intent:
             log_info_text(DIRECT_HAND_FLAG, "PIKA LAST-INTENT : " + last_intent)
-            native_question, domains, nbr_chunks = get_util_values(
+            native_question, domains, old_nbr_chunks = get_util_values(
                 last_intent, active_flow, sscomp_entity_values,
-                native_question, domains, nbr_chunks
+                native_question, domains, old_nbr_chunks
             )
         else:
             log_info_text(DIRECT_HAND_FLAG, "PIKA LAST-INTENT is unavailable")
@@ -568,18 +644,19 @@ def get_native_question_domain_nbr_chunks(last_intent, native_question, intent, 
                                 last_intent in ActiveIntents.RESULTS_INTENTS or last_intent == ActiveIntents.HOW_AUTHENTICATE_WITH_CHATBOT.value))
                 )
         ):
-            native_question += "" # f" **{chatbot_context}**"
+            native_question += ""  # f" **{chatbot_context}**"
             domains = ["chatbot"]
-            nbr_chunks = 2
+            old_nbr_chunks = 2
         else:
-            native_question, domains, nbr_chunks = get_util_values(intent, active_flow, sscomp_entity_values, native_question, domains, nbr_chunks)
+            native_question, domains, old_nbr_chunks = get_util_values(intent, active_flow, sscomp_entity_values,
+                                                                       native_question, domains, old_nbr_chunks)
 
     log_info_text("##### PIKA FINAL DOMAINS : ", str(intent) + " -> " + str(domains))
 
-    return native_question, domains, nbr_chunks
+    return native_question, domains, old_nbr_chunks
+
 
 async def get_filename_context(ctx: MyConversationContextSlots):
-
     question, grades, specialities = get_grade_speciality_values_from_synonyms(ctx.action_label,
                                                                                ctx.native_question,
                                                                                ctx.detected_slots, ctx.entities)
@@ -592,13 +669,15 @@ async def get_filename_context(ctx: MyConversationContextSlots):
 
     grades = mapping_old_new_grades(grades)
 
-    filename, context = await get_context_from_langchain_rag(ctx.action_label, question, domains, grades, ctx.nbr_chunks)
+    filename, context = await get_context_from_langchain_rag(ctx.action_label, question, domains, grades,
+                                                             ctx.nbr_chunks)
 
     log_info_text(ctx.action_label, f"domains : {str(domains)}")
     log_info_text(ctx.action_label, f"NEW grades : {grades}")
     log_info_text(ctx.action_label, f"question : {question}")
 
     return filename, context, question
+
 
 def get_entity_values(question, synonyms_lookup, entity_types):
     """

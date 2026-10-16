@@ -43,8 +43,8 @@ class Settings(BaseSettings):
     # RASA-RAG Service
     # -------------------------
     RASA_RAG_TOKEN = os.getenv("RASA_RAG_TOKEN")
-    RAG_DEFAULT_CHUNKS = os.getenv("RAG_DEFAULT_CHUNKS")
-    EXPERT_TABLE_TOP_K = os.getenv("EXPERT_TABLE_TOP_K")
+    RAG_DEFAULT_CHUNKS: int = os.getenv("RAG_DEFAULT_CHUNKS")
+    EXPERT_TABLE_TOP_K: int = os.getenv("EXPERT_TABLE_TOP_K")
 
     # -------------------------
     # General

@@ -41,7 +41,28 @@ def validate_environment():
         raise ConfigurationError(
             f"Missing required environment variables: {missing}"
         )
+
+    integer_ranges = {
+        "RAG_DEFAULT_CHUNKS": (1, 20),
+        "EXPERT_TABLE_TOP_K": (1, 20),
+    }
+
+    for name, (minimum, maximum) in integer_ranges.items():
+        raw_value = os.environ[name].strip()
+        try:
+            value = int(raw_value)
+        except ValueError as exc:
+            raise ConfigurationError(
+                f"{name} must be an integer"
+            ) from exc
+
+        if not minimum <= value <= maximum:
+            raise ConfigurationError(
+                f"{name} must be between {minimum} and {maximum}"
+            )
+
     log.info(f"Environment variables validated: {', '.join(required_vars)}")
+
 
 # Run validation on import
 validate_environment()

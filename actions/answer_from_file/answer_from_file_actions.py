@@ -13,7 +13,6 @@ from pathlib import Path
 from threading import Lock
 from typing import Dict, Any
 from typing import Optional
-from typing import Union
 
 import httpx
 from openai import OpenAI
@@ -129,7 +128,7 @@ def get_messages(system_message, prompt):
 class BaseDynamicLLMAction(Action):
     """Base action providing async LLM calling, caching and helper utilities."""
 
-    def __init__(self, api_key: Union[str, None] = None):
+    def __init__(self):
 
         # OpenRouter key (NOT DeepSeek key anymore)
         # self.api_key = api_key or os.getenv("MODEL_API_KEYS")  # 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
@@ -171,36 +170,40 @@ class BaseDynamicLLMAction(Action):
             log_exception_text("##### api_key : ", self.api_key)
             return BOT_MESSAGES.get('free_tokens_reached')
 
-    async def call_custom_llm(self, action_label: str, prompt: str, payload_tech_error: dict, use_cache: bool = True) -> str:
-        """Call remote LLM async, honoring LLMCache if enabled."""
+    async def call_custom_llm(
+            self,
+            action_label: str,
+            prompt: str,
+            payload_tech_error: dict,
+            use_cache: bool = True,
+    ) -> str:
         try:
-            # LLM cache by prompt (could change to semantic cache by query)
             if use_cache:
                 cached = LLMCache.get(prompt)
-                if cached:
+                if isinstance(cached, str) and cached.strip():
                     return cached
 
-            async with httpx.AsyncClient(timeout=600.0) as client:
-                answer = await self.ask(agent_mission, prompt)
+            # self.ask must be async and must enforce its own request timeout.
+            answer = await self.ask(agent_mission, prompt)
 
-                if use_cache and answer:
-                    LLMCache.set(prompt, "(cached) - " + answer)
-                    if "?" in answer:
-                        log_info_text("####################################### THERE IS ?", " IN RESPONSE #######################################")
+            if not isinstance(answer, str) or not answer.strip():
+                raise ValueError("LLM returned an empty or invalid answer")
 
-                log_info_text("* - 3 GET ANSWER FROM LLM : ", answer)
-                extract_last_assistant(answer)
+            if use_cache:
+                LLMCache.set(prompt, answer)
 
-                return answer
+            return answer
+
         except httpx.TimeoutException:
-            log_exception_text("CALL LLM", "LLM timeout")
-            return f"{BOT_MESSAGES.get('huge_llm_response_time')}"
-        except httpx.RequestError as e:
-            log_exception_text(action_label, f"{BOT_MESSAGES.get('error_model_connexion')}")
-            return send_random_message_user_and_dsi(action_label, payload_tech_error, e)
-        except Exception as e:
-            log_exception_text("CALL LLM", "LLM unexpected error")
-            return f"{BOT_MESSAGES.get('model_call_error')} : {e}"
+            return BOT_MESSAGES.get("huge_llm_response_time", "The response took too long.")
+
+        except httpx.RequestError as exc:
+            return send_random_message_user_and_dsi(
+                action_label, payload_tech_error, exc
+            )
+
+        except ValueError:
+            return BOT_MESSAGES.get("model_call_error", "I couldn't generate a response.")
 
     async def call_llm_safe(
             self,
