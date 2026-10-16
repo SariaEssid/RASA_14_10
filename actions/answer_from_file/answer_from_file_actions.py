@@ -6,6 +6,7 @@ actions/answer_from_file/answer_from_file_actions.py
 
 from __future__ import annotations
 
+import asyncio
 import json
 import re
 import time
@@ -16,12 +17,11 @@ from typing import Optional
 from typing import cast
 
 import httpx
-from openai import OpenAI, APITimeoutError, APIConnectionError, RateLimitError, AsyncOpenAI
+from openai import APITimeoutError, APIConnectionError, RateLimitError, AsyncOpenAI, APIStatusError
 from openai.types.chat import (
     ChatCompletionMessageParam,
     ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam)
-
 from rasa_sdk import Action
 
 from actions.actions import exception_fallback_err, exception_llm_err, exception_llm_err_dsi, get_payload
@@ -143,8 +143,6 @@ class BaseDynamicLLMAction(Action):
 
     def __init__(self):
 
-        # OpenRouter key (NOT DeepSeek key anymore)
-        # self.api_key = api_key or os.getenv("MODEL_API_KEYS")  # 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
         self.api_key = settings.MODEL_API_KEYS
 
         if not self.api_key:
@@ -155,6 +153,7 @@ class BaseDynamicLLMAction(Action):
             api_key=self.api_key,
             base_url=settings.LLM_BASE_URL,
             timeout=httpx.Timeout(120.0, connect=5.0),
+            max_retries=1
         )
     action_label = ActionsLabel.PY_BASE_LLM_ACTION.value
 
@@ -162,43 +161,19 @@ class BaseDynamicLLMAction(Action):
             self,
             system_mission: str,
             prompt: str,
-            action_label: str,
-            payload_tech_error,
             model: str = settings.LLM_MODEL
     ) -> str:
         """
         Send prompt to OpenRouter DeepSeek model and return response.
         """
 
-        try:
-
-            response = await self.client.chat.completions.create(
+        response = await self.client.chat.completions.create(
                 model=model,
                 messages=get_my_messages(system_mission, prompt),
                 stream=False,
             )
 
-            return response.choices[0].message.content or ""
-
-        except APITimeoutError:
-            return BOT_MESSAGES.get("huge_llm_response_time")
-
-        except RateLimitError:
-            return BOT_MESSAGES.get("free_tokens_reached")
-
-        except APIConnectionError as exc:
-            issue = f"OpenRouter API Error: {str(exc)}"
-            log_exception_text("Issue encountred : ", issue)
-            log_exception_text("##### api_key : ", self.api_key)
-            return send_random_message_user_and_dsi(
-                action_label, payload_tech_error, exc
-            )
-
-        except ValueError:
-            return BOT_MESSAGES.get(
-                "model_call_error",
-                "I couldn't generate a response.",
-            )
+        return response.choices[0].message.content or ""
 
     async def call_custom_llm(
             self,
@@ -207,35 +182,58 @@ class BaseDynamicLLMAction(Action):
             payload_tech_error: dict,
             use_cache: bool = True,
     ) -> str:
+        if use_cache:
+            cached = LLMCache.get(prompt)
+            if isinstance(cached, str) and cached.strip():
+                return cached
+
         try:
-            if use_cache:
-                cached = LLMCache.get(prompt)
-                if isinstance(cached, str) and cached.strip():
-                    return cached
+            answer = await self.ask(agent_mission, prompt)
 
-            # self.ask must be async and must enforce its own request timeout.
-            answer = await self.ask(agent_mission, prompt, action_label, payload_tech_error)
-
-            if not isinstance(answer, str) or not answer.strip():
-                raise ValueError("LLM returned an empty or invalid answer")
-
-            if use_cache:
-                LLMCache.set(prompt, answer)
-
-            return answer
+            if not answer.strip():
+                raise ValueError("LLM returned empty content")
 
 
         except APITimeoutError:
-            return BOT_MESSAGES.get("huge_llm_response_time")
+            return BOT_MESSAGES.get("huge_llm_response_time", "The response took too long.")
+
+
+        # Handle 429 before APIStatusError because RateLimitError
+        # is a more specific status error.
+        except RateLimitError:
+            return BOT_MESSAGES.get("free_tokens_reached", "The model is temporarily unavailable.")
+
+
+        except APIStatusError as exc:
+
+            if exc.status_code == 402:
+                # OpenRouter uses 402 when the account has insufficient credits.
+                return BOT_MESSAGES.get("free_tokens_reached", "The model is temporarily unavailable.")
+
+            if exc.status_code == 408:
+                return BOT_MESSAGES.get("huge_llm_response_time", "The response took too long.")
+
+            if exc.status_code >= 500:
+                return BOT_MESSAGES.get("error_model_connexion", "The model service is temporarily unavailable.")
+
+            # Includes errors such as 401, 403, and 404. Keep provider details
+            # out of the user-facing response.
+
+            return BOT_MESSAGES.get("model_call_error", "I couldn't generate a response.")
 
 
         except APIConnectionError as exc:
-            return send_random_message_user_and_dsi(
-                action_label, payload_tech_error, exc
+            return await asyncio.to_thread(
+                send_random_message_user_and_dsi,
+                action_label,
+                payload_tech_error,
+                exc,
             )
 
-        except ValueError:
-            return BOT_MESSAGES.get("model_call_error", "I couldn't generate a response.")
+        if use_cache:
+            LLMCache.set(prompt, answer)
+
+        return answer
 
     async def call_llm_safe(
             self,
