@@ -4,22 +4,20 @@ tests/unit/test_answer_from_markdown_actions.py
 @author ESSID Saria
 """
 from typing import Any
+from unittest.mock import AsyncMock, Mock
+
+import pytest
 
 from actions.answer_from_file.answer_from_markdown.answer_from_markdown_actions import (
     format_values,
     detect_domain,
     get_academic_stuff_rules,
     get_native_question_domain_nbr_chunks, search_expert_all_roles, get_infos_by_expert_name,
-    get_comp_values_from_synonyms, get_decision_mode, ActionLangChainRouting,
-    ActionAcademicStuff, ActionEvaluatorsAndPJ
+    get_comp_values_from_synonyms
 )
-from actions.answer_from_file.llm_helpers import skip_duplication
 from actions.constants.ActionsLabel import ActionsLabel
-
 from actions.constants.ActiveIntents import ActiveIntents
 
-import pytest
-from unittest.mock import AsyncMock, Mock
 
 # =========================================================
 # format_values

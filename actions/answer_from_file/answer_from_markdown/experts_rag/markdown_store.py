@@ -14,6 +14,9 @@ from actions.logging.logging_helpers import log_info_text
 
 import re
 
+from actions.settings.settings import settings
+
+
 def parse_markdown_sections(markdown_text: str):
     sections = []
     current_title = "Root"
@@ -104,7 +107,7 @@ def table_to_narrative_d(markdown_table: str) -> str:
 
     return "\n".join(narrative_output)
 
-def retrieve_sections_with_table_dynamic_bb(sections, question, top_k=3):
+def retrieve_sections_with_table_dynamic_bb(sections, question, top_k=settings.EXPERT_TABLE_TOP_K):
     question_lower = question.lower()
     question_tokens = question_lower.split()
     scored = []
@@ -204,7 +207,7 @@ def extract_cell_value(narrative_text: str, specialite: str, composante: str) ->
 
 
 ###################################################
-def retrieve_sections_with_table_dynamic(sections, question, top_k=3):
+def retrieve_sections_with_table_dynamic(sections, question, top_k=settings.EXPERT_TABLE_TOP_K):
     question_tokens = question.lower().split()
     scored = []
 

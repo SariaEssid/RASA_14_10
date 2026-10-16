@@ -363,7 +363,6 @@ async def get_context_from_langchain_rag(
 
         if not data["answer"].strip():
             raise ValueError("RAG service returned empty context")
-
         context = data.get("answer") or ""
         filename = data.get("source_file") or "unknown"
 
@@ -639,3 +638,12 @@ def get_payload_rasa_rag_service():
         "confidence": 1,
         "messageExchangeDate": datetime.now(timezone.utc).isoformat()
     }
+
+def get_academic_stuff_rules():
+    return """\n
+- Groupe de **Spécilités Techniques** : Technologie de l'information, Électromécanique, Génie Civil, Génie énergétique, Mathématique
+- Groupe de **Spécialité de Langues** : Langues et Communications
+
+- ❌ Un candidat du **Groupe 1 (spécialités techniques)** ne peut **jamais postuler** pour un grade du **Groupe 2**.
+- ❌ Un candidat du **Groupe 2 (Langues et Communication)** ne peut **jamais postuler** pour un grade du **Groupe 1**
+"""

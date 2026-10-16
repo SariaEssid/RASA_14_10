@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 import logging
 import os
 
-load_dotenv(override=True)
+load_dotenv()
 log = logging.getLogger("rasa-actions")
 LANG_CHAIN_URL = os.getenv("LANG_CHAIN_URL")
 API_URL = os.getenv("API_URL")
@@ -28,6 +28,8 @@ def validate_environment():
         "PDF_PATH_FILES",
         "MARKDOWN_PATH_FILES",
         "PHI3_PATH",
+        "RAG_DEFAULT_CHUNKS",
+        "EXPERT_TABLE_TOP_K"
     ]
 
     missing = [

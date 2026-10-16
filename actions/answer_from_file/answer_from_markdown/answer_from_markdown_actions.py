@@ -21,8 +21,8 @@ from actions.actions import append_friendly_intro_to_answer, get_local_header, n
 from actions.answer_from_file.answer_from_file_actions import BaseDynamicLLMAction, load_util_values, fusion_and_call_llm, log_params, track_values
 from actions.answer_from_file.answer_from_markdown.experts_rag.action_llm_markdown import get_markdown_content
 from actions.answer_from_file.answer_from_markdown.experts_rag.markdown_store import \
-    retrieve_sections_with_table_dynamic_bb, \
-    parse_markdown_sections, table_to_narrative_e, ROW_ANCHORS, extract_cell_value, parse_specialities_from_question
+    parse_markdown_sections, table_to_narrative_e, ROW_ANCHORS, extract_cell_value, parse_specialities_from_question, \
+    retrieve_sections_with_table_dynamic_bb
 from actions.answer_from_file.bot_missions import get_standard_bot_mission, \
     get_neutral_bot_mission, get_extended_bot_mission, get_extended_bot_mission_with_alerts, \
     get_detailed_standard_full_last_conv_bot_mission_with_context, \
@@ -33,7 +33,7 @@ from actions.answer_from_file.llm_helpers import detect_composantes, \
     rewrite_using_slots_prod_grade, get_synonyms_lookup, get_grade_speciality_values, \
     get_sscomp_values, get_context_from_langchain_rag, get_filename_context_prompt, \
     verif_hard_qe, mapping_old_new_grades, get_util_values, track_prompt_decision_params, \
-    get_decision_mode, get_clean_slot_values, skip_unrelated_action
+    get_decision_mode, get_clean_slot_values, skip_unrelated_action, get_academic_stuff_rules
 from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.ActionsNome import ActionsNome
 from actions.constants.ActiveIntents import ActiveIntents
@@ -48,6 +48,8 @@ from actions.utils.message_helpers import send_multiple_messages_forwarded_by_bu
 from actions.utils.slots_helpers import get_return_slots_for_conversations, get_slots_to_set_eval_pj, \
     get_slots_to_set_maintain_conv, get_slots_to_set_maintain_active_flow, get_slots_to_set_last_answer_flow
 
+nbr_chunks = settings.RAG_DEFAULT_CHUNKS
+top_k = settings.EXPERT_TABLE_TOP_K
 
 class ActionEvaluatorsAndPJ(BaseDynamicLLMAction):
 
@@ -69,7 +71,6 @@ class ActionEvaluatorsAndPJ(BaseDynamicLLMAction):
 
         try:
             maintained_intent = intent
-            nbr_chunks = 2
             slot_speciality_value, slot_grade_value, slot_session_value, slot_sscomp_value, slot_expert_value = get_extracted_slots(action_label, tracker)
 
             entities = ["grade", "speciality", "sscomp", "expert"]
@@ -148,7 +149,6 @@ class ActionAcademicStuff(BaseDynamicLLMAction):
 
         try:
             maintained_intent = intent
-            nbr_chunks = 2
             get_extracted_slots(action_label, tracker)
             entities = ["grade", "speciality"]
             detected_slots = ["assistant_tech", "technologue", "maitre_tech", "professeur_tech", "efm", "efs", "efa", "ef", "elcc", "elcc1", "elcc2"]
@@ -257,14 +257,13 @@ class ActionLangChainRouting(BaseDynamicLLMAction):
             log_info_text(action_label, "INTENTS : " + intent + " - " + last_intent)
 
         try:
-            nbr_chunks = 2
             maintained_intent = intent
 
             native_question, domains, nbr_chunks = get_native_question_domain_nbr_chunks(last_intent,
                                                                                         native_question, intent,
                                                                                         active_flow,
                                                                                         sscomp_entity_values,
-                                                                                        nbr_chunks)
+                                                                                        settings.RAG_DEFAULT_CHUNKS)
             log_info_text(action_label, "FLOWW - domains : " + str(domains))
 
             decision_mode = "short"
@@ -350,7 +349,7 @@ def get_ask_experts_by_comp_prompt(action_label, question):
     markdown_raw = get_markdown_content(settings.PATH_HIERARCY_EVALS_JURYS_MRKDN_BY)
     sections = parse_markdown_sections(markdown_raw)
 
-    retrieved_sections = retrieve_sections_with_table_dynamic_bb(sections, question, top_k=3)
+    retrieved_sections = retrieve_sections_with_table_dynamic_bb(sections, question, top_k=top_k)
     # 2️⃣ Detect composantes & specialities
     raw_composantes = detect_composantes(question)  # e.g., ['production rdi', 'dossier']
 
@@ -543,15 +542,6 @@ def detect_domain(question: str):
 
     log_info_text("👉 👉   my-domain-D : ", f"{str(domains)}")
     return domains
-
-def get_academic_stuff_rules():
-    return """\n
-- Groupe de **Spécilités Techniques** : Technologie de l'information, Électromécanique, Génie Civil, Génie énergétique, Mathématique
-- Groupe de **Spécialité de Langues** : Langues et Communications
-
-- ❌ Un candidat du **Groupe 1 (spécialités techniques)** ne peut **jamais postuler** pour un grade du **Groupe 2**.
-- ❌ Un candidat du **Groupe 2 (Langues et Communication)** ne peut **jamais postuler** pour un grade du **Groupe 1**
-"""
 
 def get_native_question_domain_nbr_chunks(last_intent, native_question, intent, active_flow, sscomp_entity_values, nbr_chunks):
 

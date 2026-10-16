@@ -19,7 +19,7 @@ action_endpoint:
 
 # ✅ Add this for local development
 cors:
-  - "*"
+  - "https://chat.esprit.com"
 
 # Tracker store which is used to store the conversations.
 # By default the conversations are stored in memory.

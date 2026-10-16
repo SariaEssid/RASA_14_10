@@ -62,7 +62,7 @@ class ActionPGInfosFromPDF(BaseDynamicLLMAction):
 
             PDF_PATH = get_file_path(intent, INTENT_MAP_PG_INFO, settings.PATH_HIERARCY_ALL)
 
-            nbr_chunks = 2
+            nbr_chunks = settings.RAG_DEFAULT_CHUNKS
             maintained_intent = intent
             last_intent, active_flow = skip_duplication(self, tracker, action_label)
             sscomp_entity_values = get_comp_values_from_synonyms(action_label, native_question, entities)
