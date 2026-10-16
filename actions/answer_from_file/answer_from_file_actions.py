@@ -13,9 +13,15 @@ from pathlib import Path
 from threading import Lock
 from typing import Dict, Any
 from typing import Optional
+from typing import cast
 
 import httpx
-from openai import OpenAI
+from openai import OpenAI, APITimeoutError, APIConnectionError, RateLimitError, AsyncOpenAI
+from openai.types.chat import (
+    ChatCompletionMessageParam,
+    ChatCompletionSystemMessageParam,
+    ChatCompletionUserMessageParam)
+
 from rasa_sdk import Action
 
 from actions.actions import exception_fallback_err, exception_llm_err, exception_llm_err_dsi, get_payload
@@ -116,14 +122,21 @@ def load_json_cached(cache_key: str, path: Path) -> dict:
         log_exception_text("LOAD JSON CACHED", f"Error loading JSON file {e}")
         return {}
 
-
-def get_messages(system_message, prompt):
-    messages = [
-        {"role": "system", "content": system_message},
-        {"role": "user", "content": prompt},
+def get_my_messages(
+    system_message: str,
+    prompt: str,
+) -> list[ChatCompletionMessageParam]:
+    messages: list[ChatCompletionMessageParam] = [
+        cast(
+            ChatCompletionSystemMessageParam,
+            {"role": "system", "content": system_message},
+        ),
+        cast(
+            ChatCompletionUserMessageParam,
+            {"role": "user", "content": prompt},
+        ),
     ]
     return messages
-
 
 class BaseDynamicLLMAction(Action):
     """Base action providing async LLM calling, caching and helper utilities."""
@@ -138,9 +151,10 @@ class BaseDynamicLLMAction(Action):
             raise ValueError("AI Forge API key is missing.")
 
         # OpenRouter OpenAI-compatible endpoint
-        self.client = OpenAI(
+        self.client = AsyncOpenAI(
             api_key=self.api_key,
-            base_url=settings.LLM_BASE_URL
+            base_url=settings.LLM_BASE_URL,
+            timeout=httpx.Timeout(120.0, connect=5.0),
         )
     action_label = ActionsLabel.PY_BASE_LLM_ACTION.value
 
@@ -148,6 +162,8 @@ class BaseDynamicLLMAction(Action):
             self,
             system_mission: str,
             prompt: str,
+            action_label: str,
+            payload_tech_error,
             model: str = settings.LLM_MODEL
     ) -> str:
         """
@@ -156,19 +172,33 @@ class BaseDynamicLLMAction(Action):
 
         try:
 
-            response = self.client.chat.completions.create(
+            response = await self.client.chat.completions.create(
                 model=model,
-                messages=get_messages(system_mission, prompt) or [],
-                stream=False
+                messages=get_my_messages(system_mission, prompt),
+                stream=False,
             )
 
-            return response.choices[0].message.content
+            return response.choices[0].message.content or ""
 
-        except Exception as e:
-            issue = f"OpenRouter API Error: {str(e)}"
+        except APITimeoutError:
+            return BOT_MESSAGES.get("huge_llm_response_time")
+
+        except RateLimitError:
+            return BOT_MESSAGES.get("free_tokens_reached")
+
+        except APIConnectionError as exc:
+            issue = f"OpenRouter API Error: {str(exc)}"
             log_exception_text("Issue encountred : ", issue)
             log_exception_text("##### api_key : ", self.api_key)
-            return BOT_MESSAGES.get('free_tokens_reached')
+            return send_random_message_user_and_dsi(
+                action_label, payload_tech_error, exc
+            )
+
+        except ValueError:
+            return BOT_MESSAGES.get(
+                "model_call_error",
+                "I couldn't generate a response.",
+            )
 
     async def call_custom_llm(
             self,
@@ -184,7 +214,7 @@ class BaseDynamicLLMAction(Action):
                     return cached
 
             # self.ask must be async and must enforce its own request timeout.
-            answer = await self.ask(agent_mission, prompt)
+            answer = await self.ask(agent_mission, prompt, action_label, payload_tech_error)
 
             if not isinstance(answer, str) or not answer.strip():
                 raise ValueError("LLM returned an empty or invalid answer")
@@ -194,10 +224,12 @@ class BaseDynamicLLMAction(Action):
 
             return answer
 
-        except httpx.TimeoutException:
-            return BOT_MESSAGES.get("huge_llm_response_time", "The response took too long.")
 
-        except httpx.RequestError as exc:
+        except APITimeoutError:
+            return BOT_MESSAGES.get("huge_llm_response_time")
+
+
+        except APIConnectionError as exc:
             return send_random_message_user_and_dsi(
                 action_label, payload_tech_error, exc
             )

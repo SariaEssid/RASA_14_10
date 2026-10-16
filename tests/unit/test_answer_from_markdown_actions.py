@@ -104,7 +104,7 @@ def test_get_native_question_domain_pwd():
             intent=ActiveIntents.ASK_FORGOT_RESET_PASSWORD.value,
             active_flow=None,
             sscomp_entity_values=[],
-            nbr_chunks=2
+            old_nbr_chunks=2
         )
     )
 
@@ -121,7 +121,7 @@ def test_get_native_question_domain_resources():
             intent=ActiveIntents.ASK_ACCESS_RESOURCES_BY_EVALUATOR.value,
             active_flow=None,
             sscomp_entity_values=[],
-            nbr_chunks=2
+            old_nbr_chunks=2
         )
     )
 
@@ -138,7 +138,7 @@ def test_get_native_question_domain_global_advices_with_active_flow():
             intent=ActiveIntents.ASK_GLOBAL_ADVICES_PG.value,
             active_flow="selected_advice_plan",
             sscomp_entity_values=[],
-            nbr_chunks=2
+            old_nbr_chunks=2
         )
     )
 
@@ -155,7 +155,7 @@ def test_get_native_question_domain_procedure():
             intent=ActiveIntents.ASK_PROCEDURE_PG.value,
             active_flow=None,
             sscomp_entity_values=[],
-            nbr_chunks=2
+            old_nbr_chunks=2
         )
     )
 
@@ -171,7 +171,7 @@ def test_get_native_question_domain_default():
             intent="UNKNOWN_INTENT",
             active_flow=None,
             sscomp_entity_values=[],
-            nbr_chunks=2
+            old_nbr_chunks=2
         )
     )
 
