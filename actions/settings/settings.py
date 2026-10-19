@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     # Pydantic v1 config
     # -------------------------
     class Config:
-        env_file = ".env"
+        env_file = ".env.dev"
         extra = "ignore"
         # In v1, we usually specify case sensitivity here if needed
         case_sensitive = False

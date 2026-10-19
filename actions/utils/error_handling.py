@@ -7,6 +7,7 @@ actions/utils/error_handling.py
 from functools import wraps
 from typing import Callable, Any, Text, Dict, List
 from rasa_sdk import Tracker
+from rasa_sdk.events import SlotSet
 from rasa_sdk.executor import CollectingDispatcher
 from datetime import datetime, timezone
 from actions.constants.Constants import BOT_MESSAGES
@@ -46,5 +47,5 @@ def handle_action_errors(original_func: Callable) -> Callable:
             }
             await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, "CENTRAL_HANDLING_ERROR", payload_tech_error, e)
 
-        return []
+        return [SlotSet("password", None)]
     return wrapper

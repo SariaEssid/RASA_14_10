@@ -3,13 +3,20 @@ actions/settings/config.py
 
 @author ESSID Saria | Copyright (c) 2025. ESPRIT
 """
+from pathlib import Path
 
 from dotenv import load_dotenv
 
 import logging
 import os
 
-load_dotenv()
+# Project root: chatbot_RASA/
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+ENV_FILE = PROJECT_ROOT / ".env.dev"
+
+# Load .env.dev before reading or validating environment variables
+load_dotenv(dotenv_path=ENV_FILE, override=False)
+
 log = logging.getLogger("rasa-actions")
 LANG_CHAIN_URL = os.getenv("LANG_CHAIN_URL")
 API_URL = os.getenv("API_URL")
