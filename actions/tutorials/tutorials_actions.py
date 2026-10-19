@@ -119,11 +119,11 @@ class ActionSelectButton(Action):
             await log_chat(user_id, session_id, user_input, answer, intent, confidence)
 
         except KeyError as key_err:
-            answer = send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, key_err)
+            answer = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, key_err)
             await log_chat(user_id, session_id, user_input, answer, intent, confidence)
 
         except (json.JSONDecodeError, TypeError) as parse_err:
-            answer = send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, parse_err)
+            answer = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, parse_err)
             await log_chat(user_id, session_id, user_input, answer, intent, confidence)
 
         except Exception as e:
@@ -160,7 +160,7 @@ async def get_google_images(matches, dispatcher, action_label, payload_tech_erro
 
         except Exception as e:
             message = "Oupsy ! 😬, le lien est inaccessible actuellement !\n" + BOT_MESSAGES.get('to_be_fixed_by_team')
-            answer = send_custom_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, e, message, GRILLE_SS_COMPOSANTES)
+            answer = await send_custom_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, e, message, GRILLE_SS_COMPOSANTES)
             await log_chat(user_id, session_id, user_input, answer, intent, confidence)
 
     return list_img_str

@@ -202,12 +202,12 @@ class ActionGetDynamicResponse(BaseDynamicLLMAction):
             await log_chat(user_id, session_id, question, answer, intent, confidence)
 
         except KeyError as key_err:
-            answer = send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, key_err)
+            answer = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, key_err)
             log_info_text(action_label, "PIKA-3")
             await log_chat(user_id, session_id, question, answer, intent, confidence)
 
         except (json.JSONDecodeError, TypeError) as parse_err:
-            answer = send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, parse_err)
+            answer = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, parse_err)
             log_info_text(action_label, "PIKA-2")
             await log_chat(user_id, session_id, question, answer, intent, confidence)
 
@@ -276,12 +276,12 @@ class ActionGetNextDetails(Action):
             await log_chat(user_id, session_id, user_input, answer, intent, confidence)
 
         except KeyError as key_err:
-            answer = send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error,
+            answer = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error,
                                                                        key_err)
             await log_chat(user_id, session_id, user_input, answer, intent, confidence)
 
         except (json.JSONDecodeError, TypeError) as parse_err:
-            answer = send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error,
+            answer = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error,
                                                                        parse_err)
             await log_chat(user_id, session_id, user_input, answer, intent, confidence)
 

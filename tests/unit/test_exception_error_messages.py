@@ -42,14 +42,14 @@ def test_exception_fallback_err(mock_dispatcher):
 
 
 @patch("actions.utils.exception_error_messages.send_custom_fallback_problem_to_dsi_forwarded_by_buttons")
-def test_exception_llm_err_dsi(mock_send_dsi, mock_dispatcher):
+async def test_exception_llm_err_dsi(mock_send_dsi, mock_dispatcher):
     # Setup
     action_label = "action_test"
     payload = {"text": "hello"}
     err_str = "Timeout connection"
 
     # Action
-    exception_llm_err_dsi(mock_dispatcher, action_label, payload, err_str)
+    await exception_llm_err_dsi(mock_dispatcher, action_label, payload, err_str)
 
     # Assertions
     mock_send_dsi.assert_called_once_with(
@@ -58,14 +58,14 @@ def test_exception_llm_err_dsi(mock_send_dsi, mock_dispatcher):
 
 
 @patch("actions.utils.exception_error_messages.send_custom_fallback_problem_to_dsi_forwarded_by_buttons")
-def test_exception_fallback_err_dsi(mock_send_dsi, mock_dispatcher):
+async def test_exception_fallback_err_dsi(mock_send_dsi, mock_dispatcher):
     # Setup
     action_label = "action_test"
     payload = {"text": "hello"}
     err_str = "Fallback failed"
 
     # Action
-    exception_fallback_err_dsi(mock_dispatcher, action_label, payload, err_str)
+    await exception_fallback_err_dsi(mock_dispatcher, action_label, payload, err_str)
 
     # Assertions
     mock_send_dsi.assert_called_once_with(
@@ -75,7 +75,7 @@ def test_exception_fallback_err_dsi(mock_send_dsi, mock_dispatcher):
 
 @patch("actions.utils.exception_error_messages.get_random_message")
 @patch("actions.utils.exception_error_messages.send_custom_fallback_problem_to_dsi_forwarded_by_buttons")
-def test_unexpected_exception_dsi(mock_send_dsi, mock_get_random, mock_dispatcher):
+async def test_unexpected_exception_dsi(mock_send_dsi, mock_get_random, mock_dispatcher):
     # Setup
     action_label = "action_test"
     payload = {"text": "hello"}
@@ -87,7 +87,7 @@ def test_unexpected_exception_dsi(mock_send_dsi, mock_get_random, mock_dispatche
     mock_send_dsi.return_value = "DSI_NOTIFIED"
 
     # Action
-    result = unexpected_exception_dsi(mock_dispatcher, action_label, payload, err_str)
+    result = await unexpected_exception_dsi(mock_dispatcher, action_label, payload, err_str)
 
     # Assertions
     mock_get_random.assert_called_once()

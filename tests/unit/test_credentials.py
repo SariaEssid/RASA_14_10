@@ -4,10 +4,8 @@ tests/unit/test_credentials.py
 @author ESSID Saria | Copyright (c) 2025. ESPRIT
 """
 
-import time
 from unittest.mock import MagicMock, patch, AsyncMock
 
-import jwt
 import pytest
 from aiocircuitbreaker import CircuitBreakerError
 from rasa_sdk import Tracker
@@ -27,12 +25,7 @@ from actions.authentication.credentials import (
     get_user_id,
     generate_anonymous_id,
     hash_sha256,
-    log_authentication,
-    JWTValidationError,
-    decode_jwt_payload,
-    is_jwt_expired,
-    get_jwt_remaining_time,
-    validate_jwt_before_use
+    log_authentication
 )
 
 PATCH_TARGET = "actions.authentication.credentials"

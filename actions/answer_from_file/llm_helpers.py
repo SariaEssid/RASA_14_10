@@ -379,7 +379,7 @@ async def get_context_from_langchain_rag(
 
         payload = get_payload_rasa_rag_service()
         payload["botReply"] = "RAG context retrieval failed"
-        notify_team_leader_by_technical_problem(payload)
+        await notify_team_leader_by_technical_problem(payload)
         log_exception_text(
             action_label,
             f"Failed to retrieve RAG context: {status_code} - {exc}",

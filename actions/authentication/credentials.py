@@ -4,24 +4,25 @@ actions/authentication/credentials.py
 @author ESSID Saria | Copyright (c) 2025. ESPRIT
 """
 
-from datetime import datetime
-from typing import Any, Text, Dict, Optional
-from aiocircuitbreaker import CircuitBreakerError
-from rasa_sdk import Tracker
-from rasa_sdk.events import SlotSet
-from rasa_sdk.executor import CollectingDispatcher
-from actions.constants.Constants import BOT_MESSAGES, FEEDBACK_BUTTONS
-from actions.logging.logger import log_chat
-from actions.settings.settings import settings
-from actions.utils.message_helpers import send_multiple_messages_forwarded_by_buttons, \
-    alert_technical_problem_exception, send_fallback_problem_to_dsi_forwarded_by_buttons
-
 import hashlib
 import logging
 import re
 import time
 import uuid
+from datetime import datetime
+from typing import Any, Text, Dict, Optional
+
 import jwt
+from aiocircuitbreaker import CircuitBreakerError
+from rasa_sdk import Tracker
+from rasa_sdk.events import SlotSet
+from rasa_sdk.executor import CollectingDispatcher
+
+from actions.constants.Constants import BOT_MESSAGES, FEEDBACK_BUTTONS
+from actions.logging.logger import log_chat
+from actions.settings.settings import settings
+from actions.utils.message_helpers import send_multiple_messages_forwarded_by_buttons, \
+    send_fallback_problem_to_dsi_forwarded_by_buttons
 
 log = logging.getLogger("rasa-actions")
 
@@ -59,6 +60,10 @@ def fallback_credentials(tracker, text):
         username, password = ensure_credentials(tracker, text)
     return username, password
 
+def clear_credentials_slots() -> list:
+    """Wipe typed credentials from the tracker after a login attempt."""
+    return [SlotSet("username", None), SlotSet("password", None)]
+
 def is_flow(tracker, expected_flow):
     log.info("AZERTY-111: " + expected_flow)
 
@@ -88,14 +93,14 @@ async def send_invalid_format(dispatcher: CollectingDispatcher, tracker: Tracker
         return True
     return False
 
-def fail_authentication_dispatcher(
+async def fail_authentication_dispatcher(
         dispatcher: CollectingDispatcher,
         tracker: Tracker
 ) -> None:
     """Handle failed authentication for valid-formatted credentials"""
     answer = BOT_MESSAGES.get('failed_auth')
     dispatcher.utter_message(text=answer)
-    log_authentication(tracker, answer)
+    await log_authentication(tracker, answer)
 
 # 1️⃣ Define a custom exception for invalid credentials
 class InvalidCredentialsError(Exception):
@@ -128,7 +133,7 @@ async def validate_credentials(
         }
 
     except InvalidCredentialsError:
-        fail_authentication_dispatcher(dispatcher, tracker)
+        await fail_authentication_dispatcher(dispatcher, tracker)
         return {"valid": False, "username": username, "error_type": "invalid_credentials"}
 
     except CircuitBreakerError:
@@ -137,12 +142,8 @@ async def validate_credentials(
 
     except Exception as e:
         log.exception("verif_credentials failed (%s)", action_label)
-        send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, safe, str(e))
+        await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, safe, str(e))
         return {"valid": False, "username": username, "error_type": "exception"}
-
-def clear_credentials_slots() -> list:
-    """Wipe typed credentials from the tracker after an attempt."""
-    return [SlotSet("username", None), SlotSet("password", None)]
 
 def get_user_id(tracker) -> str:
     """Resolve persistent user ID with fallbacks."""

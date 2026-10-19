@@ -174,7 +174,7 @@ class ActionSemanticQA(BaseDynamicLLMAction):
                     )
                 )
             else:
-                log_faiss_unknown_question(question, score, best_index, predicted_intent, user_id, session_id)
+                await log_faiss_unknown_question(question, score, best_index, predicted_intent, user_id, session_id)
                 reponse = await follow_up_semantic(self, dispatcher, tracker, question, predicted_intent, domain)
                 return reponse
 

@@ -322,7 +322,7 @@ class ActionDynamicFaq(Action):
 
                 except Exception as e:
                     answer = await get_message(self, action_label, active_flow, intent)
-                    send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, get_payload(user_id, session_id, user_input, intent, confidence), e)
+                    await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, get_payload(user_id, session_id, user_input, intent, confidence), e)
             else:
                 answer = await get_message(self, action_label, active_flow, intent)
                 send_message_forwarded_by_buttons(dispatcher, answer)
@@ -394,7 +394,7 @@ class ActionHandleDynamicFinalGlobalResults(Action):
                             bot_response_text = await self._process_results(dispatcher, action_label, id_candidat,
                                                                             full_name, tracker, payload_tech_error)
                         else:
-                            bot_response_text = send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label,
+                            bot_response_text = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label,
                                                                                                   payload_tech_error,
                                                                                                   f'Flux Inexistant : {active_flow}')
                     else:
@@ -405,7 +405,7 @@ class ActionHandleDynamicFinalGlobalResults(Action):
                     send_multiple_messages_forwarded_by_buttons(dispatcher, bot_response_text, FEEDBACK_BUTTONS)
 
             except Exception as e:
-                bot_response_text = send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label,
+                bot_response_text = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label,
                                                                                       payload_tech_error, e)
 
             await log_chat(
@@ -446,7 +446,7 @@ class ActionHandleDynamicFinalGlobalResults(Action):
             dispatcher.utter_message(BOT_MESSAGES.get('circuit_opened_alert'))
 
         except Exception as e:
-            full_answer = send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, e)
+            full_answer = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, e)
 
         return full_answer
 
@@ -511,7 +511,7 @@ class ActionHandleDeliberationFinalResults(Action):
                                                                            answer_status)
 
                         except Exception as e:
-                            bot_response_text = send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher,
+                            bot_response_text = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher,
                                                                                                   action_label,
                                                                                                   get_payload(user_id,
                                                                                                               session_id,
@@ -579,7 +579,7 @@ async def process_final_results_response(
         log_info_text(action_label, f"answer_status : {answer_status} - {active_flow}")
 
         if answer_status == 403:
-            response = send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, answer.text)
+            response = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, answer.text)
 
         elif answer_status == 404:
             response = answer.text
@@ -607,7 +607,7 @@ async def process_final_results_response(
         else:
             error_data = answer.json()
             error_text = f"Server error: {error_data.get('error', 'Erreur inconnue')}"
-            response = send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, error_text)
+            response = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, error_text)
 
     except CircuitBreakerError as e:
         # ✅ ADD: Handle circuit breaker specifically
@@ -615,7 +615,7 @@ async def process_final_results_response(
         dispatcher.utter_message(BOT_MESSAGES.get('circuit_opened_alert'))
 
     except Exception as e:
-        response = send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, e)
+        response = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, e)
 
     # log user interaction
     await log_chat(

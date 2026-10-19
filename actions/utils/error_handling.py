@@ -44,7 +44,7 @@ def handle_action_errors(original_func: Callable) -> Callable:
                 "confidence": tracker.latest_message.get("intent", {}).get("confidence"),
                 "messageExchangeDate": datetime.now(timezone.utc).isoformat()
             }
-            send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, "CENTRAL_HANDLING_ERROR", payload_tech_error, e)
+            await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, "CENTRAL_HANDLING_ERROR", payload_tech_error, e)
 
         return []
     return wrapper

@@ -44,11 +44,11 @@ def send_multiple_messages_images_forwarded_by_buttons(dispatcher, answer: Text,
         post_fix_msg=post_fix_msg
     )
 
-def send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload, exception):
-    return send_random_message_with_alter_for_dsi(dispatcher, BOT_MESSAGES['fallback_dsi'], action_label, payload, exception)
+async def send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload, exception):
+    return await send_random_message_with_alter_for_dsi(dispatcher, BOT_MESSAGES['fallback_dsi'], action_label, payload, exception)
 
-def send_custom_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload, exception, message, buttons):
-    return send_exception_message(dispatcher, action_label, payload, exception, message, buttons)
+async def send_custom_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload, exception, message, buttons):
+    return await send_exception_message(dispatcher, action_label, payload, exception, message, buttons)
 
 def send_fallback_warning_to_dsi_forwarded_by_buttons(dispatcher):
     send_custom_message(dispatcher, 'unsaved_fallback')
@@ -72,27 +72,27 @@ def alert_technical_problem_exception(action_label, exception):
     log.exception(answer)
     return answer
 
-def send_random_message_with_alter_for_dsi(dispatcher, message_list, action_label, payload, exception):
+async def send_random_message_with_alter_for_dsi(dispatcher, message_list, action_label, payload, exception):
     """1. Pick a random message from a list
        2. Notify Team Leader
        3. Alert User"""
     formed_msg = get_random_message(message_list)
 
     payload = update_payload(action_label, formed_msg, exception, payload)
-    notify_team_leader_by_technical_problem(payload)
+    await notify_team_leader_by_technical_problem(payload)
 
     # send dispatcher
     send_multiple_messages_forwarded_by_buttons(dispatcher, formed_msg, FEEDBACK_BUTTONS)
     return formed_msg
 
-def send_random_message_user_and_dsi(action_label, payload, exception):
+async def send_random_message_user_and_dsi(action_label, payload, exception):
     """1. Pick a random message from a list
        2. Notify Team Leader
        3. Alert User"""
     formed_msg = get_random_message(BOT_MESSAGES['fallback_dsi'])
 
     payload = update_payload(action_label, formed_msg, exception, payload)
-    notify_team_leader_by_technical_problem(payload)
+    await notify_team_leader_by_technical_problem(payload)
 
     return formed_msg
 
@@ -101,13 +101,13 @@ def get_random_message(message_list):
     formed_msg = adjust_lines(message)
     return formed_msg
 
-def send_exception_message(dispatcher, action_label, payload, exception, message, buttons):
+async def send_exception_message(dispatcher, action_label, payload, exception, message, buttons):
     """1. Pick a random message from a list
        2. Notify Team Leader
        3. Alert User"""
 
     payload = update_payload(action_label, message, exception, payload)
-    notify_team_leader_by_technical_problem(payload)
+    await notify_team_leader_by_technical_problem(payload)
 
     # send dispatcher
     send_multiple_messages_forwarded_by_buttons(dispatcher, message, buttons)

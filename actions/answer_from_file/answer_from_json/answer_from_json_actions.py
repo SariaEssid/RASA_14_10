@@ -108,7 +108,7 @@ class ActionGetResponseFromJSON(BaseDynamicLLMAction):
             return get_return_slots_for_conversations(get_slots_to_set_json(slot_session_value, slot_speciality_value, slot_grade_value, last_second_question, native_question, answer, maintained_intent, decision_mode))
 
         except Exception as unexpected:
-            answer = unexpected_exception_dsi(dispatcher, action_label, payload_tech_error, str(unexpected))
+            answer = await unexpected_exception_dsi(dispatcher, action_label, payload_tech_error, str(unexpected))
             await log_chat(user_id, session_id, native_question, answer, intent, confidence)
             return [SlotSet("last_answer", f"UNEXPECTED_ERROR: {str(unexpected)}")]
 

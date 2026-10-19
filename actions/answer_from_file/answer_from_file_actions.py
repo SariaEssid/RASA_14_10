@@ -259,7 +259,7 @@ class BaseDynamicLLMAction(Action):
                     return await self.call_custom_llm(action_label, prompt, payload_tech_error)
                 except Exception as fallback_err:
                     answer = exception_fallback_err(dispatcher)
-                    exception_fallback_err_dsi(
+                    await exception_fallback_err_dsi(
                         dispatcher,
                         action_label,
                         payload_tech_error,
@@ -271,7 +271,7 @@ class BaseDynamicLLMAction(Action):
 
         except Exception as llm_err:
             answer = exception_llm_err(dispatcher)
-            exception_llm_err_dsi(
+            await exception_llm_err_dsi(
                 dispatcher,
                 action_label,
                 payload_tech_error,

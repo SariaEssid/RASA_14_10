@@ -10,7 +10,8 @@ from typing import TypeVar, Generic, Tuple, TypedDict
 from rasa_sdk import Action, Tracker
 from rasa_sdk.events import SlotSet
 from rasa_sdk.executor import CollectingDispatcher
-from actions.authentication.credentials import validate_credentials, fallback_credentials, is_flow, send_invalid_format
+from actions.authentication.credentials import validate_credentials, fallback_credentials, is_flow, send_invalid_format, \
+    clear_credentials_slots
 from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.ActiveIntents import ActiveIntents
 from actions.constants.Constants import BOT_MESSAGES
@@ -35,7 +36,6 @@ class ValidationResult(TypedDict, total=False):
     jwt: Text
     roles: List[Text]
     username: Text
-    password: Text
 
 class BaseCredentialsAction(Action, Generic[T], ABC):
     """Base class handling all credential-related functionality with CIRCUIT breaker"""
@@ -97,7 +97,7 @@ class BaseCredentialsAction(Action, Generic[T], ABC):
         intent = tracker.latest_message.get("intent", {}).get("name")
         if intent in ActiveIntents.ALL_ENTRY_INTENTS or intent == ActiveIntents.NLU_FALLBACK.value:
             log_info_text("AUTH", BOT_MESSAGES.get('skip_unrelated_action'))
-            return empty_slots()
+            return clear_credentials_slots()
 
         # ✅ Increment request counter
         self._total_requests += 1
@@ -118,8 +118,7 @@ class BaseCredentialsAction(Action, Generic[T], ABC):
             dispatcher.utter_message(f"{BOT_MESSAGES.get('many_attempts')} {settings.TOTAL_WAIT_SECONDS / 60:.0f} minutes.")
             self._failed_requests += 1
             self._auth_failures += 1
-            return empty_slots()
-        #🌟
+            return clear_credentials_slots()
 
         # 1. Check flow validity
         if not is_flow(tracker, self.expected_flow()):
@@ -136,7 +135,7 @@ class BaseCredentialsAction(Action, Generic[T], ABC):
                 tracker.get_intent_of_latest_message(),
                 tracker.latest_message.get("intent", {}).get("confidence")
             )
-            return empty_slots()
+            return clear_credentials_slots()
 
         log_info_text(action_label, f"last_intent : {last_intent}")
 
@@ -157,7 +156,7 @@ class BaseCredentialsAction(Action, Generic[T], ABC):
                 self._failed_requests += 1
                 self._format_failures += 1  #🌟
 
-                return empty_slots()
+                return clear_credentials_slots()
 
             # 4. Validate credentials if format is correct
             validation = await validate_credentials(dispatcher, tracker, username, password, self.service.verif_credentials, action_label)
@@ -170,7 +169,7 @@ class BaseCredentialsAction(Action, Generic[T], ABC):
                 # 🌟 ADD: Track this specific authentication failure
                 self._track_auth_failure(session_id, username)  #🌟
 
-                return empty_slots()
+                return clear_credentials_slots()
 
             # 🌟 ADD: Reset auth failures on successful login
             self._reset_auth_failures(session_id, username)  #🌟
@@ -189,9 +188,9 @@ class BaseCredentialsAction(Action, Generic[T], ABC):
             #log.info(f"Base Action Metrics - {metrics}") #🌟
 
             # Always store sensitive data in slots, not class variables
-            return results + get_return_slots_authentication(
-                user_jwt, user_roles, validation.get("id_user"), validation.get("full_name")
-            )
+            return (results
+                    + get_return_slots_authentication(user_jwt, user_roles, validation.get("id_user"), validation.get("full_name"))
+                    + clear_credentials_slots())
         else:
             return []
 

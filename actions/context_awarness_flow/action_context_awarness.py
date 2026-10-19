@@ -22,7 +22,6 @@ from actions.constants.ActiveIntents import ActiveIntents
 from actions.constants.Constants import FEEDBACK_BUTTONS
 from actions.logging.logger import log_chat
 from actions.logging.logging_helpers import get_last_conversation, log_info_text
-from actions.settings.settings import settings
 from actions.utils.exception_error_messages import unexpected_exception_dsi
 from actions.utils.message_helpers import send_multiple_messages_forwarded_by_buttons
 from actions.utils.slots_helpers import get_return_slots_for_conversations, get_slots_to_set_last_answer_flow, \
@@ -76,7 +75,7 @@ class ActionMaintainConversationFlow(BaseDynamicLLMAction):
             return get_return_slots_for_conversations(get_slots_to_set_maintain_active_flow(last_second_question, native_question, answer, last_intent, None, active_flow))
 
         except Exception as unexpected:
-            answer = unexpected_exception_dsi(dispatcher, action_label, payload_tech_error, str(unexpected))
+            answer = await unexpected_exception_dsi(dispatcher, action_label, payload_tech_error, str(unexpected))
             await log_chat(user_id, session_id, native_question, answer, intent, confidence)
             return get_return_slots_for_conversations(get_slots_to_set_last_answer_flow(active_flow, answer))
 
