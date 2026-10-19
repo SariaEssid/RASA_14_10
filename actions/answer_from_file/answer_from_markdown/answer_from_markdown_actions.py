@@ -296,7 +296,7 @@ class ActionLangChainRouting(BaseDynamicLLMAction):
             log_info_text(action_label, "FLOWW - domains : " + str(domains))
 
             decision_mode = "short"
-            is_hard = re.search(verif_hard_qe(), native_question, flags=re.IGNORECASE)
+            is_hard = bool(re.search(verif_hard_qe(), native_question, flags=re.IGNORECASE))
 
             if last_second_question:
                 log_info_text(action_label, "INSIDE last_second_question : " + last_second_question)
@@ -345,7 +345,7 @@ class ActionLangChainRouting(BaseDynamicLLMAction):
                     is_hard=is_hard
                 )
 
-                prompt, filename = await get_short_Answers(ctx_answer)
+                prompt, filename = await get_short_answers(ctx_answer)
 
             track_prompt_decision_params(action_label, prompt, decision_infos)
             log_info_text(action_label, "🎯 PIKO - : " + "1")
@@ -372,7 +372,7 @@ class ActionLangChainRouting(BaseDynamicLLMAction):
             return get_return_slots_for_conversations(get_slots_to_set_last_answer_flow(active_flow, answer))
 
 
-async def get_short_Answers(ctx: RequiredValuesShortAnswers):
+async def get_short_answers(ctx: RequiredValuesShortAnswers):
     action_label = ctx.action_label
     intent = ctx.intent
     last_intent = ctx.last_intent

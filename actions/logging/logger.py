@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 from datetime import datetime, timezone
 
 import requests
@@ -8,6 +9,24 @@ from actions.settings.config import API_URL
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG").upper()
 logger = logging.getLogger("rasa-actions")
+
+_SENSITIVE_KEYS = {"password", "passwd", "mdp", "pass", "jwt", "token", "authorization", "secret"}
+_SECRET_IN_TEXT = re.compile(
+    r"(?i)(\b(?:pass(?:word|wd)?|mdp|mot\s+de\s+passe)(?:\s*[=:]\s*|\s+(?:est|is)\s+))[^;\n]+"
+)
+
+def redact_secrets(text):
+    """Replace anything after a password label with [REDACTED]."""
+    return _SECRET_IN_TEXT.sub(r"\1[REDACTED]", text) if isinstance(text, str) else text
+
+def sanitize_payload(obj):
+    """Recursively drop sensitive keys (handles nested dicts and lists)."""
+    if isinstance(obj, dict):
+        return {k: sanitize_payload(v) for k, v in obj.items()
+                if str(k).lower() not in _SENSITIVE_KEYS}
+    if isinstance(obj, (list, tuple)):
+        return [sanitize_payload(v) for v in obj]
+    return obj
 
 
 def configure_logger() -> None:
@@ -36,6 +55,8 @@ async def log_chat(
 ):
     try:
         dt = datetime.now(timezone.utc)
+        user_input = redact_secrets(user_input)
+        bot_response = redact_secrets(bot_response)
 
         logger.info("ℹ️ session_id : %s", session_id)
 
@@ -67,6 +88,7 @@ async def log_chat(
         return False
 
 def notify_team_leader_by_technical_problem(payload):
+    payload = sanitize_payload(payload)
     try:
         response = requests.post(
             f"{API_URL}/notifyTeamLeaderByTechnicalProblem",

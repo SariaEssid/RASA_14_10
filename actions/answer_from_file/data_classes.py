@@ -5,11 +5,8 @@ actions/answer_from_file/data_classes.py
 """
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from typing import Any
-
-from regex import Match
 
 
 @dataclass
@@ -48,4 +45,4 @@ class RequiredValuesShortAnswers:
     new_nbr_chunks: int
     detected_slots: list[str]
     entities: list[str]
-    is_hard: Match[str] | None | Match[bytes]
+    is_hard: bool

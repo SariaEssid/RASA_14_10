@@ -13,6 +13,7 @@ from actions.utils.messages_dispatcher import MessageDispatcher
 import logging
 
 log = logging.getLogger("rasa-actions")
+_SENSITIVE_KEYS = {"password", "mdp", "pass", "jwt", "token", "authorization"}
 
 def send_multiple_messages(dispatcher, reply: Text):
     """Legacy function - delegate to MessageDispatcher"""
@@ -77,12 +78,7 @@ def send_random_message_with_alter_for_dsi(dispatcher, message_list, action_labe
        3. Alert User"""
     formed_msg = get_random_message(message_list)
 
-    # append answer
-    answer = f"<br/>{BOT_MESSAGES.get('technical_problem_exception')} {action_label} : <br/>{formed_msg} => <br/>{exception}"
-    log.exception(answer)
-
-    # integrate botReply to payload and notify team leader with API
-    payload["botReply"] = answer
+    payload = update_payload(action_label, formed_msg, exception, payload)
     notify_team_leader_by_technical_problem(payload)
 
     # send dispatcher
@@ -95,12 +91,7 @@ def send_random_message_user_and_dsi(action_label, payload, exception):
        3. Alert User"""
     formed_msg = get_random_message(BOT_MESSAGES['fallback_dsi'])
 
-    # append answer
-    answer = f"<br/>{BOT_MESSAGES.get('technical_problem_exception')} {action_label} : <br/>{formed_msg} => <br/>{exception}"
-    log.exception(f"{action_label} => + {BOT_MESSAGES.get('error_model_connexion')} : {exception}")
-
-    # integrate botReply to payload and notify team leader with API
-    payload["botReply"] = answer
+    payload = update_payload(action_label, formed_msg, exception, payload)
     notify_team_leader_by_technical_problem(payload)
 
     return formed_msg
@@ -115,17 +106,26 @@ def send_exception_message(dispatcher, action_label, payload, exception, message
        2. Notify Team Leader
        3. Alert User"""
 
-    # append answer
-    answer = f"<br/>{BOT_MESSAGES.get('technical_problem_exception')} {action_label} : <br/>{message} => <br/>{exception}"
-    log.exception(message)
-
-    # integrate botReply to payload and notify team leader with API
-    payload["botReply"] = answer
+    payload = update_payload(action_label, message, exception, payload)
     notify_team_leader_by_technical_problem(payload)
 
     # send dispatcher
     send_multiple_messages_forwarded_by_buttons(dispatcher, message, buttons)
     return message
+
+def update_payload(action_label, message, exception, payload):
+    # append answer
+    answer = f"<br/>{BOT_MESSAGES.get('technical_problem_exception')} {action_label} : <br/>{message} => <br/>{exception}"
+    log.exception(message)
+
+    # omit sensitive data
+    payload = {k: v for k, v in payload.items()
+               if k.lower() not in _SENSITIVE_KEYS}
+
+    # integrate botReply to payload and notify team leader with API
+    payload["botReply"] = answer
+
+    return payload
 
 def send_custom_message(dispatcher, message_key):
     """Send a message by key"""

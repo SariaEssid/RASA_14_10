@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Any, Text, Dict, Optional
 from aiocircuitbreaker import CircuitBreakerError
 from rasa_sdk import Tracker
+from rasa_sdk.events import SlotSet
 from rasa_sdk.executor import CollectingDispatcher
 from actions.constants.Constants import BOT_MESSAGES, FEEDBACK_BUTTONS
 from actions.logging.logger import log_chat
@@ -24,37 +25,22 @@ import jwt
 
 log = logging.getLogger("rasa-actions")
 
-def extract_credentials(text: Text) -> Dict[Text, Text]:
-    """Military-grade credential extraction"""
-    patterns = {
-        'username': [
-            # English/French patterns with robust separators
-            r'(?:username|user|login|id|identifiant|nom\s*d[\']?utilisateur)\s*[=:;,\s]\s*([^\s;,]*)',
-            r'(?:user|id)\s*[:=]\s*([^\s;]+)'
-        ],
-        'password': [
-            # Capture EVERYTHING after password label (including special chars)
-            r'(?:password|pass|mdp|mot\s*de\s*passe|code)\s*[=:;]\s*([^\n]*)',
-            # Alternative pattern for tight spaces
-            r'(?:pass|mdp)[^\w]*([^\s]+)'
-        ]
-    }
+_USERNAME_RE = re.compile(
+    r"(?i)\b(?:user(?:name)?|login|identifiant|nom\s+d['’]utilisateur)"
+    r"(?:\s*[=:]\s*|\s+est\s+)([^\s;,]+)")
+_PASSWORD_RE = re.compile(
+    r"(?i)\b(?:pass(?:word|wd)?|mdp|mot\s+de\s+passe)"
+    r"(?:\s*[=:]\s*|\s+est\s+)([^\s;]+)")
 
-    credentials = {}
-    for cred_type, regex_list in patterns.items():
-        for pattern in regex_list:
-            try:
-                match = re.search(pattern, text, re.IGNORECASE)
-                if match and match.group(1):
-                    # Clean but preserve ALL special characters
-                    clean_val = match.group(1).strip().strip('"\'')
-                    if clean_val:  # Only store if we found something
-                        credentials[cred_type] = clean_val
-                        break
-            except Exception as e:
-                log.error(f"🚨  NO 1 : EXCEPTION => {e}")
-                continue
-    return credentials
+def extract_credentials(text: Text) -> Dict[Text, Text]:
+    creds = {}
+    for key, rx in (("username", _USERNAME_RE), ("password", _PASSWORD_RE)):
+        m = rx.search(text or "")
+        if m:
+            value = m.group(1).strip().strip("\"'")
+            if value:
+                creds[key] = value
+    return creds
 
 def ensure_credentials(tracker, text):
     username = tracker.get_slot("username")
@@ -119,25 +105,17 @@ async def validate_credentials(
     dispatcher, tracker, username: Text, password: Text, verify_fn: callable, action_label: Text
 ) -> Dict[str, Any]:
     payload = {"username": username.strip(), "password": password.strip()}
+    safe = {"username": username.strip()}
 
     try:
-        # ✅ Circuit automatically tracks failures
         response = await verify_fn(payload)
-
-        # Successful login
         full_name = response["fullNameUser"]
         jwt_token = response["jwt"]
 
-        # Validate the JWT we received from Spring Boot
         if not validate_jwt_before_use(jwt_token):
             log.error("Received expired JWT token from authentication service")
             dispatcher.utter_message("🔐 Session invalide reçue du serveur. Veuillez réessayer.")
-            return {
-                "valid": False,
-                "username": username,
-                "password": password,
-                "error_type": "invalid_token"
-            }
+            return {"valid": False, "username": username, "error_type": "invalid_token"}
 
         dispatcher.utter_message(f"{BOT_MESSAGES.get('success_auth')} {full_name}")
         return {
@@ -145,26 +123,26 @@ async def validate_credentials(
             "full_name": full_name,
             "id_user": response["idUser"],
             "username": username,
-            "password": password,
             "jwt": jwt_token,
-            "roles": response.get("roles", [])
+            "roles": response.get("roles", []),
         }
 
     except InvalidCredentialsError:
-        # ❌ Do NOT count 401 as a failure in the circuit
         fail_authentication_dispatcher(dispatcher, tracker)
-        return {"valid": False, "username": username, "password": password, "error_type": "invalid_credentials"}
+        return {"valid": False, "username": username, "error_type": "invalid_credentials"}
 
     except CircuitBreakerError:
-        # Circuit is OPEN due to real failures (network/server)
-        message_auth = BOT_MESSAGES.get('circuit_opened_alert')
-        dispatcher.utter_message(message_auth)
-        return {"valid": False, "username": username, "password": password, "error_type": "circuit_open"}
+        dispatcher.utter_message(BOT_MESSAGES.get('circuit_opened_alert'))
+        return {"valid": False, "username": username, "error_type": "circuit_open"}
 
     except Exception as e:
-        alert_technical_problem_exception(dispatcher, {str(e)})
-        send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload, FEEDBACK_BUTTONS)
-        return {"valid": False, "username": username, "password": password, "error_type": "exception"}
+        log.exception("verif_credentials failed (%s)", action_label)
+        send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, safe, str(e))
+        return {"valid": False, "username": username, "error_type": "exception"}
+
+def clear_credentials_slots() -> list:
+    """Wipe typed credentials from the tracker after an attempt."""
+    return [SlotSet("username", None), SlotSet("password", None)]
 
 def get_user_id(tracker) -> str:
     """Resolve persistent user ID with fallbacks."""

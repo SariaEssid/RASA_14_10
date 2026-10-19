@@ -123,8 +123,9 @@ class Settings(BaseSettings):
     # Models
     # -------------------------
 
-    semantic_model_name: str = "all-MiniLM-L6-v2"  # BEFORE
-    # semantic_model_name = "./models/semantic_model"  # AFTER
+    # semantic_model_name: str = "all-MiniLM-L6-v2"  # BEFORE
+    semantic_model_name = "./models/semantic_model"  # AFTER
+    HF_HUB_OFFLINE: int = os.getenv("HF_HUB_OFFLINE") == "1"
 
     PHI_MODEL_PATH: str = os.getenv("PHI3_PATH")
     LLM_PHI3_API_URL: str = "http://localhost:8000/generate"
