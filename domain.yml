@@ -141,13 +141,6 @@ slots:
     initial_value: null
     mappings: []
 
-  username:
-    type: text
-    influence_conversation: false
-    mappings:
-      - type: from_entity
-        entity: username
-
   roles:
     type: text
     influence_conversation: false

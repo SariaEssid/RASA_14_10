@@ -2,42 +2,42 @@ language: fr
 assistant_id: 20250713-185142-convoluted-cap
 
 pipeline:
-  # 1. Tokenizer that preserves special characters
   - name: WhitespaceTokenizer
-    token_pattern: r'[^\s=;,:]+|\S'
 
-  - name: RegexFeaturizer
+  - name: RegexFeaturizer                 # lookup tables from nlu.yml as features
 
-  - name: LexicalSyntacticFeaturizer   # ⭐ ADD THIS
+  - name: RegexEntityExtractor            # deterministic extraction from the 7 lookup tables
+    case_sensitive: false
+    use_lookup_tables: true
+    use_regexes: false
+    use_word_boundaries: true
 
-  - name: CountVectorsFeaturizer   # word-level
-  - name: CountVectorsFeaturizer   # char-level
+  - name: LexicalSyntacticFeaturizer      # word-shape features, helps entity extraction
+
+  - name: CountVectorsFeaturizer          # word-level
+  - name: CountVectorsFeaturizer          # char-level
     analyzer: "char_wb"
     min_ngram: 1
     max_ngram: 5
 
-  - name: DIETClassifier
+  - name: DIETClassifier                  # intents + entities
     epochs: 300
     constrain_similarities: true
-    entity_recognition: true # ✅ REQUIRED
+    entity_recognition: true
     learning_rate: 0.001
     dropout: 0.2
 
   - name: EntitySynonymMapper
 
-  - name: FallbackClassifier  # show fallback
-    threshold: 0.6       # ✅ Lowered to allow classifier to succeed before fallback
+  - name: FallbackClassifier              # below 0.6 -> nlu_fallback (handled by the semantic FAISS fallback)
+    threshold: 0.6
     ambiguity_threshold: 0.1
 
-policies: # show fallback
+policies:
   - name: MemoizationPolicy
     max_history: 5
   - name: RulePolicy
-  - name: TEDPolicy
-    constrain_similarities: True  # ✅ Better training stability when using cross-entropy loss (the default in Rasa). + More interpretable confidence scores (since they're normalized between 0 and 1).
+  - name: TEDPolicy                       # generalizes beyond the written stories/rules
+    constrain_similarities: true
     max_history: 5
     epochs: 200
-
-env_vars:
-  SQLALCHEMY_SILENCE_UBER_WARNING: "1"
-  SQLALCHEMY_WARN_20: "0"

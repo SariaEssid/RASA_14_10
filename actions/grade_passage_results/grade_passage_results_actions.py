@@ -67,34 +67,42 @@ class ActionFetchFinalUnitResults(Action):
         self._expected_flow = resolve_active_flow(tracker)
 
         action_label = ActionsLabel.PY_UNIT_RESULTE.value
-        username, full_name, user_roles, user_id, session_id, user_input, question, answer, confidence, active_flow, intent = get_util_values_with_log(tracker, action_label)
+        full_name, user_roles, user_id, session_id, user_input, question, answer, confidence, active_flow, intent = get_util_values_with_log(
+            tracker, action_label)
         last_second_question = get_conversational_slots(tracker)
-        log_info_expected_flow(action_label,self.expected_flow)
+        log_info_expected_flow(action_label, self.expected_flow)
         self._expected_flow = active_flow
 
-        answer_dto = await process_final_results_response(
-            self.unit_results_service,
-            active_flow,
-            user_id,
-            dispatcher,
-            tracker,
-            confidence,
-            get_payload(user_id, session_id, user_input, intent, confidence),
-            action_label
-        )
+        bound = await get_auth_binding_json(tracker, self.unit_results_service, user_id)
+        if not bound:
+            dispatcher.utter_message(text=BOT_MESSAGES.get("login_required"),
+                                     json_message={"type": "auth_required"})
+            return get_return_slots_candidat_id_fullname(None, None)
+        else :
 
-        if answer_dto:
-            response_dto = await _format_results_message(action_label, answer_dto, active_flow, dispatcher, json.dumps(answer_dto))
-            await log_chat(user_id,session_id,user_input,response_dto,intent,confidence)
+            answer_dto = await process_final_results_response(
+                self.unit_results_service,
+                active_flow,
+                user_id,
+                dispatcher,
+                tracker,
+                confidence,
+                get_payload(user_id, session_id, user_input, intent, confidence),
+                action_label
+            )
 
-        slots_to_set = {
-            "last_last_question": last_second_question,
-            "sscomp": tracker.get_slot("sscomp"),
-            "last_question": question,
-            "last_answer": answer
-        }
+            if answer_dto:
+                response_dto = await _format_results_message(action_label, answer_dto, active_flow, dispatcher, json.dumps(answer_dto))
+                await log_chat(user_id,session_id,user_input,response_dto,intent,confidence)
 
-        return get_return_slots_candidat_id_fullname(user_id, full_name) + get_return_slots_for_conversations(slots_to_set)
+            slots_to_set = {
+                "last_last_question": last_second_question,
+                "sscomp": tracker.get_slot("sscomp"),
+                "last_question": question,
+                "last_answer": answer
+            }
+
+            return get_return_slots_candidat_id_fullname(user_id, full_name) + get_return_slots_for_conversations(slots_to_set)
 
 class ActionCongratFinalResults(Action):
 
@@ -113,7 +121,7 @@ class ActionCongratFinalResults(Action):
     ) -> List[Dict[Text, Any]]:
 
         action_label = ActionsLabel.PY_CONGRATS_RESULTS.value
-        username, full_name, user_roles, user_id, session_id, user_input, question, answer, confidence, active_flow, intent = get_util_values_with_log(tracker, action_label)
+        full_name, user_roles, user_id, session_id, user_input, question, answer, confidence, active_flow, intent = get_util_values_with_log(tracker, action_label)
 
         await get_auth_binding_json(tracker, self.congrat_service, user_id)
 
@@ -168,7 +176,7 @@ class ActionDynamicFaq(Action):
                   domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
 
         action_label = ActionsLabel.PY_DYNAMIC_FAQ.value
-        username, full_name, user_roles, user_id, session_id, user_input, question, answer, confidence, active_flow_off, intent = get_util_values_with_log(tracker, action_label)
+        full_name, user_roles, user_id, session_id, user_input, question, answer, confidence, active_flow_off, intent = get_util_values_with_log(tracker, action_label)
 
         check_is_binded = await get_auth_binding_json(tracker, self.dynamic_service, user_id)
 
@@ -335,7 +343,7 @@ class ActionHandleDynamicFinalGlobalResults(Action):
         action_label = ActionsLabel.PY_GLOBAL_RESULTS.value
         id_candidat=None
 
-        username, full_name, user_roles, user_id, session_id, user_input, question, answer, confidence, active_flow, intent = get_util_values_with_log(tracker, action_label)
+        full_name, user_roles, user_id, session_id, user_input, question, answer, confidence, active_flow, intent = get_util_values_with_log(tracker, action_label)
         payload_tech_error = get_payload(user_id, session_id, user_input, intent,confidence)
 
         intent = tracker.latest_message.get("intent", {}).get("name")
@@ -465,7 +473,7 @@ class ActionHandleDeliberationFinalResults(Action):
     async def run(self, dispatcher, tracker, domain):
 
         action_label = ActionsLabel.PY_DELIBERATION.value
-        username, full_name, user_roles, user_id, session_id, user_input, question, answer, confidence, active_flow, intent = get_util_values_with_log(tracker, action_label)
+        full_name, user_roles, user_id, session_id, user_input, question, answer, confidence, active_flow, intent = get_util_values_with_log(tracker, action_label)
         last_intent = tracker.get_slot("last_intent")
 
         log_info_text(action_label, "##### active_flow = " + active_flow)
@@ -481,7 +489,7 @@ class ActionHandleDeliberationFinalResults(Action):
 
                     log_info_text(action_label, "##### active_flow 2 = " + active_flow + ' -- ' + last_intent + ' -- ' + intent)
                     if not rasa_to_spring_token or not id_candidat:
-                        bot_response_text = BOT_MESSAGES.get('give_your_credentials')
+                        bot_response_text = BOT_MESSAGES.get('login_required')
                         send_multiple_messages_forwarded_by_buttons(dispatcher, bot_response_text, FEEDBACK_BUTTONS)
                     else:
                         try:
@@ -731,8 +739,12 @@ async def get_auth_binding_json(tracker: Tracker, service: IResultsService, user
     log_info_text("action", f"RASA_TO_SPRING_TOKEN = {rasa_to_spring_token}")
 
     if auth_binding_data and isinstance(auth_binding_data, str):
-        auth_binding_json = json.loads(auth_binding_data)
-        log_info_text("auth_binding_json : ", auth_binding_json)
+        try:
+            parsed = json.loads(auth_binding_data)
+        except ValueError:
+            parsed = None
+        if isinstance(parsed, dict) and parsed.get("userId"):  # must contain a user
+            auth_binding_json = parsed
 
         tracker.slots["id_candidat"] = auth_binding_json.get("userId")
         tracker.slots["full_name"] = auth_binding_json.get("fullName")

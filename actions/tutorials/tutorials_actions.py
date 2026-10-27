@@ -54,7 +54,7 @@ class ActionSelectButton(Action):
     ) -> List[Dict[Text, Any]]:
 
         action_label = ActionsLabel.PY_SELECT_BUTTON.value
-        username, full_name, user_roles, user_id, session_id, user_input, question, answer, confidence, active_flow, intent = get_util_values_with_log(tracker, action_label)
+        full_name, user_roles, user_id, session_id, user_input, question, answer, confidence, active_flow, intent = get_util_values_with_log(tracker, action_label)
 
         payload_tech_error = get_payload(user_id, session_id, user_input, intent[:100], confidence)
 

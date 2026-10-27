@@ -129,16 +129,15 @@ def get_util_values_with_log(tracker, label_action):
         session_id, user_id, confidence = get_user_session_conf_values(tracker)
         active_flow = resolve_active_flow(tracker)
         intent = tracker.latest_message.get("intent", {}).get("name")
-        username = tracker.get_slot('username')
         full_name = tracker.get_slot('full_name')
         user_roles = tracker.get_slot("roles")
         current_question = tracker.latest_message.get("text")
         last_question = tracker.get_slot("last_question") or ""
         last_answer = tracker.get_slot("last_answer") or ""
 
-        log_action(tracker, label_action, username, full_name, user_roles, user_id, session_id, current_question, last_question, last_answer, confidence, active_flow, intent)
+        log_action(tracker, label_action, full_name, user_roles, user_id, session_id, current_question, last_question, last_answer, confidence, active_flow, intent)
 
-        return username, full_name, user_roles, user_id, session_id, current_question, last_question, last_answer, confidence, active_flow, intent
+        return full_name, user_roles, user_id, session_id, current_question, last_question, last_answer, confidence, active_flow, intent
     except Exception as e:
         log.error(f"🚨  Error in getUtilValues: {e}")
         return None
@@ -192,14 +191,9 @@ def log_action_minimal(tracker, label_action, user_id, session_id, confidence, i
     get_commun_logs(tracker, label_action, confidence, intent, current_question, last_question, last_answer)
     log_info_text("#🌐  Browser IDS - ", f"{user_id} ... {session_id}\n")
 
-def log_action(tracker, label_action, username, full_name, user_roles, user_id, session_id, current_question, last_question, last_answer, confidence, active_flow, intent):
+def log_action(tracker, label_action, full_name, user_roles, user_id, session_id, current_question, last_question, last_answer, confidence, active_flow, intent):
     get_commun_logs(tracker, label_action, confidence, intent, current_question, last_question, last_answer)
     log_info_text("#💥  Active Flow : ", f"{active_flow} - {tracker.get_slot('active_flow')}")
-
-    log_info_text("#🧍  USER - ", f"{username} : {full_name}")
-
-    if tracker.get_slot("id_candidat"):
-        log_info_text("#🧍  USER - username : ", f"{username}")
 
     if tracker.get_slot("full_name"):
         log_info_text("#🧍  USER - full_name : ", f"{full_name}")

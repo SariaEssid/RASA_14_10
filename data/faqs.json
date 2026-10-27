@@ -48,7 +48,7 @@
   "answer" : "\uD83D\uDD0E Super question !\r\nL’équité, c’est notre priorité.\r\nLe processus est conçu de manière transparente et impartiale, avec des critères clairs basés uniquement sur tes compétences.\r\nLes biais ? On n’en veut pas ! \uD83D\uDE0E\r\nBref, chacun est jugé uniquement sur ses mérites \uD83C\uDFAF."
 }, {
   "question" : "Résultat Capsules Français et Anglais",
-  "answer" : "✍️ C'est noté,\r\n\uD83D\uDC49 J'ai besoin tout d'abord de me préciser votre **Nom Utilisateur** et votre **Mot de Passe** sous format ```username=VotreIdentifiant ; password=VotreMotDePassePGPG```."
+  "answer" : "✍️ C'est noté,\r\n\uD83D\uDC49 J'ai besoin tout d'abord de me préciser votre **Nom Utilisateur** et votre **Mot de Passe**."
 }, {
   "question" : "Bye",
   "answer" : "Au revoir !\r\n\r\nN'oublie pas que je suis là, 24/7, comme une bonne pizza. \uD83C\uDF55"
@@ -120,10 +120,10 @@
   "answer" : "C'est toujours un plaisir de vous aider. \uD83D\uDE0A\uD83E\uDD17"
 }, {
   "question" : "Résultat Global finale",
-  "answer" : "✨ Bien évidemment, //Congrat\r\n\uD83D\uDC49 J'ai besoin tout d'abord de me préciser votre **Nom Utilisateur** et votre **Mot de Passe** sous format ```username=VotreIdentifiant ; password=VotreMotDePassePGPG```."
+  "answer" : "✨ Bien évidemment, //Congrat\r\n\uD83D\uDC49 J'ai besoin tout d'abord de me préciser votre **Nom Utilisateur** et votre **Mot de Passe**."
 }, {
   "question" : "Note de la Sous Sous Composante",
-  "answer" : "\uD83D\uDC4D D'accord,\r\n\uD83D\uDC49 J'ai besoin tout d'abord de me préciser votre **Nom Utilisateur** et votre **Mot de Passe** sous format ```username=VotreIdentifiant ; password=VotreMotDePassePGPG```."
+  "answer" : "\uD83D\uDC4D D'accord,\r\n\uD83D\uDC49 J'ai besoin tout d'abord de me préciser votre **Nom Utilisateur** et votre **Mot de Passe**."
 }, {
   "question" : "hi",
   "answer" : "Un beau Bonjour \uD83C\uDF39\r\n\r\nQue cette journée soit remplie de lumière ✨\r\n\r\nVotre copilote préférée est connectée \uD83D\uDCBB\r\n\r\nOn commence par quoi ? \uD83D\uDE0D"
@@ -2421,7 +2421,7 @@
   "answer" : "\uD83D\uDE80 C'est parti,\r\nDurant l'évaluation de chaque sous-sous-composante. Vous êtes invité à saisir vos commentaires et vos remarques.\\n\\n\r\n\uD83E\uDDEA Il est recommendé de ne pas dépasser 250 caractères.\\n\\n\r\nCe commentaire est visible par :\r\n- \uD83D\uDC64 Le Président du Jury\r\n- \uD83D\uDC65 Les Membres du Jury\r\n- \uD83D\uDC64 Le Président du CPGR\r\n- \uD83D\uDC65 Les Membres du CPGR\r\n*Note : * préciser vos commentaires est optionnel et n'est pas oligatoire"
 }, {
   "question" : "Résultat Dissertations Français et Anglais",
-  "answer" : "\uD83C\uDF3C Avec grand plaisir,\r\n\uD83D\uDC49 J'ai besoin tout d'abord de me préciser votre **Nom Utilisateur** et votre **Mot de Passe** sous format ```username=VotreIdentifiant ; password=VotreMotDePassePGPG```."
+  "answer" : "\uD83C\uDF3C Avec grand plaisir,\r\n\uD83D\uDC49 J'ai besoin tout d'abord de me préciser votre **Nom Utilisateur** et votre **Mot de Passe**."
 }, {
   "question" : "J’avoue que je flippe un peu, c’est la première fois que je passe un grade \uD83D\uDE05",
   "answer" : "Haha, t’inquiète, c’est totalement normal \uD83D\uDE0C\r\nLe premier passage, c’est toujours un peu impressionnant… mais tu vas gérer \uD83D\uDCAA\r\nJe peux t’aider à préparer ton dossier et te donner des tips pour être au top \uD83C\uDFAF\r\nMerci de sélectionner une modalité :"
@@ -2448,7 +2448,7 @@
   "answer" : "\uD83C\uDF3C Très bonne question \uD83D\uDC96\r\noui bien sûr , le **président et les membres CPGR** sont autorisés \uD83D\uDC69‍⚖️ pour consulter les livrables des candidats."
 }, {
   "question" : "Je ne sais pas les composantes que je suis affectées.",
-  "answer" : "\uD83D\uDCAC Toujours partante pour ça,\r\nJe ne suis pas autorisée de vous fournir ces détails.\r\nJ'ai besoin tout d'abord de me préciser votre Utilisateur et Mot de Passe sous format ```username=VotreIdentifiant ; password=VotreMotDePassePGPG```."
+  "answer" : "\uD83D\uDCAC Toujours partante pour ça,\r\nJe ne suis pas autorisée de vous fournir ces détails.\r\nJ'ai besoin tout d'abord de me préciser votre Utilisateur et Mot de Passe."
 }, {
   "question" : "enchanté",
   "answer" : "Enchantée également !\r\n\r\nAu plaisir de vous aider.\uD83C\uDF39"

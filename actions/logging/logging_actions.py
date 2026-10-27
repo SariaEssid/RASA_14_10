@@ -77,7 +77,7 @@ class ActionLogFeedback(Action):
     async def run(self, dispatcher, tracker, domain):
 
         action_label = ActionsLabel.PY_LOGGING.value
-        username, full_name, user_roles, user_id, session_id, user_input, question, answer, confidence, active_flow, intent = get_util_values_with_log(tracker, action_label)
+        full_name, user_roles, user_id, session_id, user_input, question, answer, confidence, active_flow, intent = get_util_values_with_log(tracker, action_label)
         # Get last Q/A + vote
         vote = "utile" if intent == "affirm_helpful" else "inutile"
 

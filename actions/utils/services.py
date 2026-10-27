@@ -310,7 +310,7 @@ class HttpResultsService(IResultsService):
             res = await self.client.post("internal/chat-sessions/identity", json=payload, headers=_auth_headers(token))
             response_time = time.time() - start_time
             self._update_stats(True, response_time)
-            return res.text
+            return res.text if res.status_code == 200 else None
         except Exception as e:
             log.exception(e)
             response_time = time.time() - start_time

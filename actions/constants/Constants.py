@@ -11,7 +11,6 @@ ALL_COMPOSANTES_PRINCIPALES = ["Composante 1", "Composante 2", "Composante 3"]
 
 ALL_SLOTS = [
     "active_flow",
-    "username",
     "id_candidat",
     "full_name",
     "roles",
@@ -106,8 +105,7 @@ BOT_MESSAGES = {
     "no_composante": "Oopsy, 🙃\ncette **Composante/Sous-Sous Composante** est inexistante 😅!\n🔄 Merci de chequer s'il y a eu des typos 🧐.\n",
     "thanks_for_your_feedback": "🙏 Merci pour votre retour",
     "confirm_before_auth": "⚠️ Nous vous remercions de bien vouloir confirmer **avant** de nous communiquer vos identifiants 😊 !",
-    "give_your_credentials": "👍 D'accord.\nMerci de me fournir 🔐 votre **Nom d'utilisateur** et votre **Mot de Passe**.",
-    "not_connected": "⛔ Vous n'êtes pas connectés à votre compte !\nMerci d'insérer votre **Nom utilisateur** et votre **Mot de passe** 🗝️.",
+    "login_required": "🔐 Pour consulter vos résultats, veuillez d'abord vous connecter à la plateforme, puis relancez votre demande dans le chat.",    "not_connected": "⛔ Vous n'êtes pas connectés à votre compte !\nMerci d'insérer votre **Nom utilisateur** et votre **Mot de passe** 🗝️.",
     "not_authorized_user": "⛔ Désolé, vous n'êtes pas autorisé à ce service.\n\uD83D\uDD10 Les résultats du passage de grade sont **réservés** aux candidats.",
     "missed_deposit": "⚠️ Note Inexistante car Vous **n'avez pas déposé** aucun document pour ",
     "result_not_found": "😔 Désolé,\n⚠️ Aucun résultat n'est disponible !\n- La validation de votre Dépôt n'est pas encore finalisée par les Évaluateurs. \n- **Ou** vous n'avez pas dépposé vos documents !. \nMerci pour votre compréhension 🌹",

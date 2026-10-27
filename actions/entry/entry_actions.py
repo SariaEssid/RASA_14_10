@@ -55,7 +55,7 @@ class ActionGetDynamicResponse(BaseDynamicLLMAction):
     ) -> List[Dict[Text, Any]]:
         start_time = time.time()
         action_label = ActionsLabel.PY_DYNAMIC_RESPONSE.value
-        username, full_name, user_roles, user_id, session_id, question, last_question, last_answer, confidence, active_flow, intent = get_util_values_with_log(tracker, action_label)
+        full_name, user_roles, user_id, session_id, question, last_question, last_answer, confidence, active_flow, intent = get_util_values_with_log(tracker, action_label)
         payload_tech_error = get_payload(user_id, session_id, question, intent, confidence)
 
         get__decision_mode__last_intent(action_label, tracker)
@@ -249,7 +249,7 @@ class ActionGetNextDetails(Action):
     ) -> List[Dict[Text, Any]]:
 
         action_label = ActionsLabel.PY_GET_NEXT_DETAILS_RESPONSE.value
-        username, full_name, user_roles, user_id, session_id, user_input, question, answer, confidence, active_flow, intent = get_util_values_with_log(
+        full_name, user_roles, user_id, session_id, user_input, question, answer, confidence, active_flow, intent = get_util_values_with_log(
             tracker, action_label)
         payload_tech_error = get_payload(user_id, session_id, user_input, intent, confidence)
 

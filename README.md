@@ -41,7 +41,7 @@ flowchart LR
 
 This chatbot was developed to:
 - Assist employees with real-time, AI-driven support on internal platforms
-- Handle multilingual queries (English, French, Arabic, etc.): To be done
+- Handle multilingual queries (English, Arabic, etc.): To be done in near future
 - Automate common FAQ and support tasks
 - Serve as an evolving knowledge assistant for the enterprise
 
