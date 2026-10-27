@@ -7,7 +7,6 @@ actions/utils/test_services.py
 from collections import deque
 from typing import List, Dict, Any
 from aiocircuitbreaker import circuit
-from actions.authentication.credentials import InvalidCredentialsError, validate_jwt_before_use
 from actions.settings.config import API_URL
 from actions.settings.settings import settings
 from actions.utils.interfaces import IResultsService
@@ -42,9 +41,12 @@ def get_start_time() -> float:
 # ---------------------------
 # Service implementation
 # ---------------------------
-async def _validate_jwt_before_request(token: str) -> bool:
-    return validate_jwt_before_use(token.strip().replace("Bearer ", "").lstrip("."))
 
+api_base_url = f"{API_URL.rstrip('/')}/"
+
+
+async def log_request(request: httpx.Request) -> None:
+    log.info("Outgoing request URL: %s", request.url)
 
 class HttpResultsService(IResultsService):
     def __init__(self):
@@ -56,7 +58,7 @@ class HttpResultsService(IResultsService):
         )
 
         self.client = httpx.AsyncClient(
-            base_url=API_URL,
+            base_url=api_base_url,
             timeout=httpx.Timeout(
                 connect=settings.TIMEOUT_CONNECT,
                 read=settings.TIMEOUT_READ,
@@ -66,7 +68,8 @@ class HttpResultsService(IResultsService):
             limits=self.pool_limits,  # Use the stored attribute here
             transport=httpx.AsyncHTTPTransport(
                 retries=settings.RETRY_NETWORK_FAILURES,
-            )
+            ),
+            event_hooks = {"request": [log_request]},
         )
 
         # Connection health monitoring
@@ -159,12 +162,8 @@ class HttpResultsService(IResultsService):
     async def get_candidate_results(self, candidate_id: str, token: str) -> str:
         start_time = get_start_time()
         try:
-            # Validate JWT before making the request
-            if not await _validate_jwt_before_request(token):
-                raise RuntimeError(f"Invalid or expired JWT token: {token}")
 
-            res = await self.client.get(
-                "/findCandidateFinalResultsForBot",
+            res = await self.client.get("internal/chat-sessions/findCandidateFinalResultsForBot",
                 params={"idCandidat": candidate_id},
                 headers=_auth_headers(token),
             )
@@ -183,7 +182,7 @@ class HttpResultsService(IResultsService):
     async def get_faq_by_label_intent(self, intent: str):
         start_time = get_start_time()
         try:
-            res = await self.client.get("/getFaqByLabelIntent", params={"intentLabel": intent})
+            res = await self.client.get("aichatbot/getFaqByLabelIntent", params={"intentLabel": intent})
             response_time = time.time() - start_time
             self._update_stats(True, response_time)
             return res.text
@@ -197,7 +196,7 @@ class HttpResultsService(IResultsService):
     async def save_feedback(self, payload):
         start_time = get_start_time()
         try:
-            res = await self.client.post("/feedback", json=payload)
+            res = await self.client.post("aichatbot/feedback", json=payload)
             response_time = time.time() - start_time
             self._update_stats(True, response_time)
             return res.text
@@ -211,7 +210,15 @@ class HttpResultsService(IResultsService):
     async def get_dynamic_response(self, payload) -> List[Dict[str, Any]]:
         start_time = get_start_time()
         try:
-            res = await self.client.post("/get-dynamic-response", json=payload)
+            res = await self.client.post("aichatbot/get-dynamic-response", json=payload)
+
+
+            # Log the full URL actually requested
+            log.info("Full endpoint URL: %s", res.request.url)
+            log.info("HTTP status: %s", res.status_code)
+            log.info("Response body: %s", res.text)
+            res.raise_for_status()
+
             response_time = time.time() - start_time
             self._update_stats(True, response_time)
             return res.json()
@@ -226,7 +233,7 @@ class HttpResultsService(IResultsService):
     async def get_next_detailed_response(self, user_id):
         start_time = get_start_time()
         try:
-            res = await self.client.get("/get-next-detailed-response", params={"userId": user_id})
+            res = await self.client.get("aichatbot/get-next-detailed-response", params={"userId": user_id})
             response_time = time.time() - start_time
             self._update_stats(True, response_time)
             return res.text
@@ -241,13 +248,16 @@ class HttpResultsService(IResultsService):
     async def find_final_results_for_bot_by_intent_and_candidat_id(self, flow_intent, candidat_id, token):
         start_time = get_start_time()
         try:
-            if not await _validate_jwt_before_request(token):
-                raise RuntimeError(f"Invalid or expired JWT token: {token}")
 
-            res = await self.client.get("/findFinalResultsForBotByIntentFlowAndCandidatId",
+            res = await self.client.get("internal/chat-sessions/findFinalResultsForBotByIntentFlowAndCandidatId",
                                         params={"intentFlow": flow_intent, "candidatId": candidat_id},
                                         headers=_auth_headers(token))
 
+            log.info("____________________________________ 1")
+            log.info(candidat_id)
+            log.info(flow_intent)
+            log.info(res)
+            log.info("____________________________________ 2")
             response_time = time.time() - start_time
             self._update_stats(True, response_time)
 
@@ -262,11 +272,8 @@ class HttpResultsService(IResultsService):
     async def congrat_final_results_by_id_candidat(self, candidat_id, token):
         start_time = get_start_time()
         try:
-            # Validate JWT before making the request
-            if not await _validate_jwt_before_request(token):
-                raise RuntimeError(f"Invalid or expired JWT token: {token}")
 
-            res = await self.client.get("/congratFinalResultsByIdCandidat",
+            res = await self.client.get("internal/chat-sessions/congratFinalResultsByIdCandidat",
                                         params={"candidatId": candidat_id},
                                         headers=_auth_headers(token))
 
@@ -281,40 +288,28 @@ class HttpResultsService(IResultsService):
             raise
 
     @CIRCUIT
-    async def verif_credentials(self, payload: dict) -> dict:
-        start_time = get_start_time()
-        try:
-            response = await self.client.post("/verifCredentials", json=payload)
-            response_time = time.time() - start_time
-
-            if response.status_code == 401:
-                self._update_stats(True, response_time)  # 401 is expected for wrong credentials
-                raise InvalidCredentialsError("Invalid username or password")
-
-            response.raise_for_status()
-            self._update_stats(True, response_time)
-
-            return response.json()
-        except Exception as e:
-            response_time = time.time() - start_time
-            if not isinstance(e, InvalidCredentialsError):
-                self._update_stats(False, response_time)
-            raise
-
-    async def get_jwt_token(self):
-        if hasattr(self, "token") and self.token:
-            return self.token
-        raise RuntimeError("JWT token is missing. Authenticate first.")
-
-    @CIRCUIT
     async def get_info_by_button_label(self, payload) -> str:
         start_time = get_start_time()
         try:
-            res = await self.client.post("/get-info-by-button-label", json=payload)
+            res = await self.client.post("aichatbot/get-info-by-button-label", json=payload)
 
             response_time = time.time() - start_time
             self._update_stats(True, response_time)
 
+            return res.text
+        except Exception as e:
+            log.exception(e)
+            response_time = time.time() - start_time
+            self._update_stats(False, response_time)
+            raise
+
+    @CIRCUIT
+    async def get_chat_session_identity(self, payload, token):
+        start_time = get_start_time()
+        try:
+            res = await self.client.post("internal/chat-sessions/identity", json=payload, headers=_auth_headers(token))
+            response_time = time.time() - start_time
+            self._update_stats(True, response_time)
             return res.text
         except Exception as e:
             log.exception(e)

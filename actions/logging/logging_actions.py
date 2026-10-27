@@ -8,12 +8,11 @@ from typing import Text
 from typing import TypeVar
 from rasa_sdk import Action
 from rasa_sdk.events import SlotSet
-from actions.authentication.credentials import get_user_id
 from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.ActionsNome import ActionsNome
 from actions.constants.Constants import BOT_MESSAGES
 from actions.logging.logger import log_chat
-from actions.logging.logging_helpers import get_util_values_with_log
+from actions.logging.logging_helpers import get_util_values_with_log, get_user_id
 from actions.utils.error_handling import handle_action_errors
 from actions.utils.interfaces import IResultsService
 from actions.utils.message_helpers import alert_technical_problem_exception, send_fallback_warning_to_dsi_forwarded_by_buttons
@@ -78,7 +77,7 @@ class ActionLogFeedback(Action):
     async def run(self, dispatcher, tracker, domain):
 
         action_label = ActionsLabel.PY_LOGGING.value
-        username, full_name, user_jwt, user_roles, user_id, session_id, user_input, question, answer, confidence, active_flow, intent = get_util_values_with_log(tracker, action_label)
+        username, full_name, user_roles, user_id, session_id, user_input, question, answer, confidence, active_flow, intent = get_util_values_with_log(tracker, action_label)
         # Get last Q/A + vote
         vote = "utile" if intent == "affirm_helpful" else "inutile"
 

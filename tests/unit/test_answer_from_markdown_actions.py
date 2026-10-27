@@ -91,27 +91,6 @@ def test_get_academic_stuff_rules_contains_expected_values():
     assert "jamais postuler" in result
 
 
-# =========================================================
-# get_native_question_domain_nbr_chunks
-# =========================================================
-
-def test_get_native_question_domain_pwd():
-
-    native_question, domains, nbr_chunks = (
-        get_native_question_domain_nbr_chunks(
-            last_intent="x",
-            native_question="reset password",
-            intent=ActiveIntents.ASK_FORGOT_RESET_PASSWORD.value,
-            active_flow=None,
-            sscomp_entity_values=[],
-            old_nbr_chunks=2
-        )
-    )
-
-    assert domains == ["mdp"]
-    assert nbr_chunks == 2
-
-
 def test_get_native_question_domain_resources():
 
     native_question, domains, nbr_chunks = (

@@ -12,10 +12,8 @@ ALL_COMPOSANTES_PRINCIPALES = ["Composante 1", "Composante 2", "Composante 3"]
 ALL_SLOTS = [
     "active_flow",
     "username",
-    "password",
     "id_candidat",
     "full_name",
-    "jwt",
     "roles",
     "last_question",
     "last_answer",
@@ -56,8 +54,6 @@ GRILLE_SS_COMPOSANTES = [
 ]
 
 BOT_MESSAGES = {
-    "credentials_invalid_format": "⚠️ Format invalide !.\n📝 Saisissez selon ce modèle 👉 **username = ... ; password = ...**",
-    "credentials_valid_format": "🔓 Identifiants valides et ✅ Accès autorisé.\n",
     "failed_auth": "🔐 Échec d'authentification.\n⚠️ Nom utilisateur et/ou Mot de passe incorrect(s).",
     "success_auth": "✅ Authentification réussie.\n👤 Vous êtes ",
     "friendly_intro": [
@@ -119,7 +115,6 @@ BOT_MESSAGES = {
     "sscomp_comp_mark": "📝 Note(s) Sous Sous Composante(s) :\n",
     "unexpected_error": "❌ Désolé, une erreur inattendue s'est produite.",
     "good_reception": "Bonne Réception 🌹",
-    "auth_service_temp_unvailable": "🔐 Authentication service temporarily unavailable.",
     "official_tech_problem": "❌ Désolé, un problème technique est survenu.",
     "circuit_opened_alert": "🥺 Désolé, plusieurs tentatives incorrectes ont été trackées !\nVous êtes invités à réessayer dans 120 secondes. ⏳",
     "prompt_input_username": "⚠️ Veuillez entrer votre nom d'utilisateur :",

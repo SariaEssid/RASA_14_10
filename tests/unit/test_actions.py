@@ -20,7 +20,6 @@ from actions.actions import (
     generate_composante_buttons,
     call_llm_with_retry,
     ensure_complete_bullets,
-    append_friendly_intro_to_answer,
     contains_number,
     clean_response,
     format_response_steps,
@@ -32,7 +31,6 @@ from actions.actions import (
     get_formatted_next_line,
     append_friendly_intro_to_answer_block,
     get_name,
-    get_extracted_slots,
     get_list_extracted_slots,
     reformulate_session_if_hallucinate,
     ajuster_session_passage_grade,
@@ -42,7 +40,6 @@ from actions.actions import (
     detecter_mots_cles,
     get__decision_mode__last_intent
 )
-from actions.constants.ActiveIntents import ActiveIntents
 from actions.semantic.faiss_ranking import FAQCandidate
 
 # Target namespace pour les patchs
@@ -70,7 +67,6 @@ def mock_tracker():
 # ==============================================================================
 def test_remove_excluded_patterns():
     sentence = "Est-ce qu'il y a des conditions si sont-ils présents ?"
-    # "est-ce qu" et "sont-ils" doivent être supprimés
     result = remove_excluded_patterns(sentence)
     assert "est-ce qu" not in result
     assert "sont-ils" not in result

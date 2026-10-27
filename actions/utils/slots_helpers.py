@@ -26,10 +26,9 @@ def get_return_slots_candidat_id_fullname(id_candidat, full_name):
         log.error(f"🚨  Error clearing slots: {e}")
         return empty_slots()
 
-def get_return_slots_authentication(user_jwt, user_roles, id_candidat, full_name):
+def get_return_slots_authentication(user_roles, id_candidat, full_name):
     try:
         slots_to_set = {
-            "jwt": user_jwt,
             "roles": user_roles,
             "id_candidat": id_candidat,
             "full_name": full_name
@@ -40,10 +39,10 @@ def get_return_slots_authentication(user_jwt, user_roles, id_candidat, full_name
         log.error(f"🚨  Error clearing slots: {e}")
         return empty_slots()
 
-def get_return_slots_user_jwt_roles(user_jwt, user_roles):
+def get_return_slots_user_fullname_roles(full_name, user_roles):
     try:
         slots_to_set = {
-            "jwt": user_jwt,
+            "full_name": full_name,
             "roles": user_roles
         }
 

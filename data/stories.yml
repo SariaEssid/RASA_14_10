@@ -3,11 +3,6 @@
 #
 version: "3.1"
 stories:
-######################################################################## STATIC FLOWS
-  #HERE-1 : DONE
-
-
-
 
 ############################################################################# NOTE Dissertation FR+EN
   - story: French Dissertation Flow
@@ -19,7 +14,6 @@ stories:
         - language: fr
         - active_flow: "note_diss_fr"
       - action: action_dynamic_faq
-      - intent: provide_credentials
       - action: action_dynamic_final_unit_results
       - slot_was_set:
         - active_flow: "note_diss_fr"
@@ -35,7 +29,6 @@ stories:
         - language: en
         - active_flow: "note_diss_en"
       - action: action_dynamic_faq
-      - intent: provide_credentials
       - action: action_dynamic_final_unit_results
       - slot_was_set:
         - active_flow: "note_diss_en"
@@ -52,7 +45,6 @@ stories:
       - action: action_dynamic_faq
       - slot_was_set:
         - active_flow: "note_diss_en"
-      - intent: provide_credentials
       - action: action_dynamic_final_unit_results
       - intent: deny
       - action: action_dynamic_faq
@@ -67,7 +59,6 @@ stories:
         - language: fr
         - active_flow: "note_caps_fr"
       - action: action_dynamic_faq
-      - intent: provide_credentials
       - action: action_dynamic_final_unit_results
       - slot_was_set:
         - active_flow: "note_caps_fr"
@@ -83,7 +74,6 @@ stories:
         - language: en
         - active_flow: "note_caps_en"
       - action: action_dynamic_faq
-      - intent: provide_credentials
       - action: action_dynamic_final_unit_results
       - slot_was_set:
         - active_flow: "note_diss_en"
@@ -100,7 +90,6 @@ stories:
       - action: action_dynamic_faq
       - slot_was_set:
         - active_flow: "note_caps_en"
-      - intent: provide_credentials
       - action: action_dynamic_final_unit_results
       - intent: deny
       - action: action_dynamic_faq
@@ -120,8 +109,6 @@ stories:
       - action: action_dynamic_faq
       - slot_was_set:
         - active_flow: "note_first_comp"
-      - intent: provide_credentials
-      - action: action_dynamic_final_unit_results
 
   ### Production
   - story: Note SS-Composante <Production> generic flow
@@ -134,8 +121,6 @@ stories:
       - action: action_dynamic_faq
       - slot_was_set:
         - active_flow: "note_second_comp"
-      - intent: provide_credentials
-      - action: action_dynamic_final_unit_results
 
   ### Dossier & Entretien
   - story: Note SS-Composante <Dossier & Entretien> generic flow
@@ -148,8 +133,6 @@ stories:
       - action: action_dynamic_faq
       - slot_was_set:
         - active_flow: "note_third_comp"
-      - intent: provide_credentials
-      - action: action_dynamic_final_unit_results
 
   #############################################
   # ✅ Generic flow for all SS-Composantes
@@ -165,7 +148,6 @@ stories:
       - action: action_dynamic_faq
       - slot_was_set:
         - active_flow: "note_test_qcm"
-      - intent: provide_credentials
       - action: action_dynamic_final_unit_results
       - slot_was_set:
         - active_flow: "note_test_qcm"
@@ -183,8 +165,6 @@ stories:
       - action: action_dynamic_faq
       - slot_was_set:
         - active_flow: "note_qcm_all"
-      - intent: provide_credentials
-      - action: action_dynamic_final_unit_results
 
   ### Capsules Pédagogiques TOTALES
   - story: Note SS-Composante <Capsules Pédagogiques TOTALES> generic flow
@@ -197,8 +177,6 @@ stories:
       - action: action_dynamic_faq
       - slot_was_set:
         - active_flow: "note_caps_peda_all"
-      - intent: provide_credentials
-      - action: action_dynamic_final_unit_results
 
   ### Dissertations TOTALES
   - story: Note SS-Composante <Dissertations TOTALES> generic flow
@@ -211,8 +189,6 @@ stories:
       - action: action_dynamic_faq
       - slot_was_set:
         - active_flow: "note_diss_all"
-      - intent: provide_credentials
-      - action: action_dynamic_final_unit_results
 
   ### Séquences Enseignements TOTALES
   - story: Note SS-Composante <Séquences Enseignements TOTALES> generic flow
@@ -225,8 +201,6 @@ stories:
       - action: action_dynamic_faq
       - slot_was_set:
         - active_flow: "note_seq_ens_all"
-      - intent: provide_credentials
-      - action: action_dynamic_final_unit_results
 
   ### Plateforme de TP TOTALES
   - story: Note SS-Composante <Plateforme de TP TOTALES> generic flow
@@ -239,8 +213,6 @@ stories:
       - action: action_dynamic_faq
       - slot_was_set:
         - active_flow: "note_plat_tp_all"
-      - intent: provide_credentials
-      - action: action_dynamic_final_unit_results
 
   ### Production Pédagogiques TOTALES
   - story: Note SS-Composante <Production Pédagogiques TOTALES> generic flow
@@ -253,8 +225,6 @@ stories:
       - action: action_dynamic_faq
       - slot_was_set:
         - active_flow: "note_prod_peda_all"
-      - intent: provide_credentials
-      - action: action_dynamic_final_unit_results
 
   ### Production RDI
   - story: Note SS-Composante <Production RDI> generic flow
@@ -267,8 +237,6 @@ stories:
       - action: action_dynamic_faq
       - slot_was_set:
         - active_flow: "note_prod_rdi"
-      - intent: provide_credentials
-      - action: action_dynamic_final_unit_results
 
   ### Supports Pédagogiques
   - story: Note SS-Composante <Supports Pédagogiques> generic flow
@@ -281,8 +249,6 @@ stories:
       - action: action_dynamic_faq
       - slot_was_set:
         - active_flow: "note_supp_peda"
-      - intent: provide_credentials
-      - action: action_dynamic_final_unit_results
 
   ### Evaluation Présentation SE
   - story: Note SS-Composante <Evaluation Présentation SE> generic flow
@@ -295,8 +261,6 @@ stories:
       - action: action_dynamic_faq
       - slot_was_set:
         - active_flow: "note_eval_pres_se"
-      - intent: provide_credentials
-      - action: action_dynamic_final_unit_results
 
   ### Evaluation SE
   - story: Note SS-Composante <Evaluation SE> generic flow
@@ -309,8 +273,6 @@ stories:
       - action: action_dynamic_faq
       - slot_was_set:
         - active_flow: "note_eval_se"
-      - intent: provide_credentials
-      - action: action_dynamic_final_unit_results
 
   ### Evaluation Présentation PTP
   - story: Note SS-Composante <Evaluation Présentation PTP> generic flow
@@ -323,8 +285,6 @@ stories:
       - action: action_dynamic_faq
       - slot_was_set:
         - active_flow: "note_eval_pres_ptp"
-      - intent: provide_credentials
-      - action: action_dynamic_final_unit_results
 
   ### Evaluation PTP
   - story: Note SS-Composante <Evaluation SE> generic flow
@@ -337,8 +297,6 @@ stories:
       - action: action_dynamic_faq
       - slot_was_set:
         - active_flow: "note_eval_ptp"
-      - intent: provide_credentials
-      - action: action_dynamic_final_unit_results
 
   ### Présentation Dossier
   - story: Note SS-Composante <Présentation Dossier> generic flow
@@ -351,8 +309,6 @@ stories:
       - action: action_dynamic_faq
       - slot_was_set:
         - active_flow: "note_pres_doss"
-      - intent: provide_credentials
-      - action: action_dynamic_final_unit_results
 
   ### Discussion jury
   - story: Note SS-Composante <Discussion jury> generic flow
@@ -365,8 +321,6 @@ stories:
       - action: action_dynamic_faq
       - slot_was_set:
         - active_flow: "note_diss_jury"
-      - intent: provide_credentials
-      - action: action_dynamic_final_unit_results
 
   ### Entretien avec Jury TOTALES
   - story: Note SS-Composante <Entretien avec Jury TOTALES> generic flow
@@ -379,8 +333,6 @@ stories:
       - action: action_dynamic_faq
       - slot_was_set:
         - active_flow: "note_entr_jury_all"
-      - intent: provide_credentials
-      - action: action_dynamic_final_unit_results
 
   ### Dossier
   - story: Note SS-Composante <Dossier> generic flow
@@ -393,22 +345,6 @@ stories:
       - action: action_dynamic_faq
       - slot_was_set:
         - active_flow: "note_doss"
-      - intent: provide_credentials
-      - action: action_dynamic_final_unit_results
-
-############################################################################# FINAL RESULTS
-  - story: congrat_final_results_flow_affirm
-    steps:
-      - intent: ask_resultat_final
-      - action: action_dynamic_faq
-      - slot_was_set:
-        - active_flow: "congrats"
-      - intent: provide_credentials
-      - action: action_congrat_final_results
-      - slot_was_set:
-        - active_flow: "congrats"
-      - intent: affirm
-      - action: action_bilan_final_results
 
 ############################################################################# DELIBERATION FINAL RESULTS
   - story: deliberation_final_results_flow_affirm
@@ -421,12 +357,24 @@ stories:
       - action: action_deliberation_final_results
       - slot_was_set:
         - active_flow: "congrats"
-      - intent: provide_credentials
+      - intent: affirm
       - action: action_congrat_final_results
       - slot_was_set:
-        - active_flow: "congrats"  # CONFIRMED
+          - active_flow: "all_bilan"
+
+############################################################################# FINAL RESULTS
+  - story: congrat_final_results_flow_affirm
+    steps:
+      - intent: ask_resultat_final
+      - action: action_dynamic_faq
+      - slot_was_set:
+        - active_flow: "congrats"
+      - action: action_congrat_final_results
+      - slot_was_set:
+        - active_flow: "all_bilan"
       - intent: affirm
       - action: action_bilan_final_results
+
 
 ############################################################################# SELECT COMPOSANTE
   - story: Guide About Candidature Passage de Grade

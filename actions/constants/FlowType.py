@@ -33,6 +33,8 @@ class FlowType(str, Enum):
     NOTE_DISS_EN = "note_diss_en"
     DELIBERATION = "deliberation"
     CONGRATS = "congrats"
+    ALL_BILAN = "all_bilan"
+    RESULT = "result"
     GREET = "greet"
     BYE = "bye"
     GUIDE_COMP = "guide_comp"

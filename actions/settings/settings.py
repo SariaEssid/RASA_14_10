@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     RASA_RAG_TOKEN = os.getenv("RASA_RAG_TOKEN")
     RAG_DEFAULT_CHUNKS: int = os.getenv("RAG_DEFAULT_CHUNKS")
     EXPERT_TABLE_TOP_K: int = os.getenv("EXPERT_TABLE_TOP_K")
+    RASA_TO_SPRING_TOKEN = os.getenv("RASA_TO_SPRING_TOKEN")
 
     # -------------------------
     # General
@@ -89,12 +90,6 @@ class Settings(BaseSettings):
     # -------------------------
     RETRY_NETWORK_FAILURES: int = 3
     MAX_REQUEST_ROLLING_RETRIES: int = 100
-
-    # -------------------------
-    # Security
-    # -------------------------
-    TOTAL_WAIT_SECONDS: int = 125
-    INVALID_CREDENTIALS_TENTATIVE_COUNT: int = 5
 
     # -------------------------
     # File Paths

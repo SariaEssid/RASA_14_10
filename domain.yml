@@ -28,7 +28,6 @@ intents:
   - ask_change_password
   - ask_about_candidature_passage_grade
   - ask_forgot_reset_password
-  - provide_credentials
   - affirm
   - deny
   - ask_resultat_dissertation
@@ -90,7 +89,6 @@ intents:
 
 entities:
   - username
-  - password
   - language
   - sscomp
   - keyword
@@ -130,6 +128,7 @@ actions:
   - action_academic_stuff
   - action_lang_chain_routing
 
+
 # Slots for Feedbacks
 slots:
   session_id:
@@ -148,19 +147,6 @@ slots:
     mappings:
       - type: from_entity
         entity: username
-
-  password:
-    type: text
-    influence_conversation: false
-    mappings:
-      - type: from_entity
-        entity: password
-  jwt:
-    type: text
-    influence_conversation: false
-    mappings:
-      - type: from_entity
-        entity: jwt
 
   roles:
     type: text
@@ -357,7 +343,6 @@ slots:
         conditions:
           - active_loop: null  # Only extract outside forms
 
-
   active_flow:
     type: categorical
     values:
@@ -388,6 +373,7 @@ slots:
       - note_second_comp
       - note_third_comp
       - congrats # FINAL RESULTS
+      - all_bilan
       - deliberation
       - guide_comp
       - selected_comp

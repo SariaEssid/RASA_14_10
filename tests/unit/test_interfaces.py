@@ -55,10 +55,6 @@ async def test_concrete_implementation():
             await super().congrat_final_results_by_id_candidat(candidat_id, token)
             return Response(200)
 
-        async def verif_credentials(self, payload: dict):
-            await super().verif_credentials(payload)
-            return {"valid": True}
-
         async def get_info_by_button_label(self, payload: dict):
             await super().get_info_by_button_label(payload)
             return Response(200)
@@ -77,6 +73,5 @@ async def test_concrete_implementation():
     assert (await service.get_dynamic_response({})) == {"text": "hello"}
     assert (await service.find_final_results_for_bot_by_intent_and_candidat_id("intent", "123", "tok")).status_code == 200
     assert (await service.congrat_final_results_by_id_candidat("123", "tok")).status_code == 200
-    assert (await service.verif_credentials({})) == {"valid": True}
     assert (await service.get_info_by_button_label({})).status_code == 200
     assert (await service.get_next_detailed_response("user_1")) == "detailed text"

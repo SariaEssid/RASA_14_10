@@ -79,29 +79,6 @@ async def test_handle_action_errors_success(mock_rasa_components):
     result = await dummy_action(None, dispatcher, tracker, domain)
     assert result == [{"event": "slot", "name": "test", "value": True}]
 
-
-@pytest.mark.asyncio
-@patch("actions.utils.error_handling.name", create=True)
-async def test_handle_action_errors_http_401(mock_name, mock_rasa_components):
-    """Verify dispatcher utters failed authentication message on HTTP 401."""
-    dispatcher, tracker, domain = mock_rasa_components
-    mock_name.return_value = "DummyAction"
-
-    # Simulate an HTTPStatusError with a 401 response status code
-    mock_response = MagicMock(spec=httpx.Response)
-    mock_response.status_code = 401
-    mock_response.text = "Unauthorized access token"
-
-    @handle_action_errors
-    async def dummy_action(_self, _disp, _trk, _dom):
-        raise httpx.HTTPStatusError("Auth Error", request=MagicMock(), response=mock_response)
-
-    result = await dummy_action(None, dispatcher, tracker, domain)
-
-    assert result == []
-    dispatcher.utter_message.assert_called_once()
-
-
 @pytest.mark.asyncio
 @patch("actions.utils.error_handling.name", create=True)
 async def test_handle_action_errors_http_404(mock_name, mock_rasa_components):

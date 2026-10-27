@@ -229,19 +229,6 @@ rules:
       - action: action_listen
 
 ############################################################################# NOTE Dissertation FR+EN
-  - rule: handle give Dissertation FR flow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "note_diss_fr" # CONFIRMED
-      - action: action_dynamic_final_unit_results
-
-  - rule: handle give Dissertation EN fl1ow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "note_diss_en"
-      - action: action_dynamic_final_unit_results
 
   - rule: handle Get Note Dissertation FR affirm
     condition:
@@ -276,19 +263,6 @@ rules:
       - action: action_dynamic_faq
 
 ############################################################################# NOTE Capsule FR+EN
-  - rule: handle give Capsule FR flow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "note_caps_fr" # CONFIRMED
-      - action: action_dynamic_final_unit_results
-
-  - rule: handle give Capsule EN flow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "note_caps_en"
-      - action: action_dynamic_final_unit_results
 
   - rule: handle Get Note Capsule FR affirm
     condition:
@@ -323,12 +297,6 @@ rules:
       - action: action_dynamic_faq
 
 ############################################################################# NOTE Prod RDI
-  - rule: handle give Prod RDI flow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "note_prod_rdi" # CONFIRMED
-      - action: action_dynamic_final_unit_results
 
   - rule: handle Get Note Prod RDI affirm
     condition:
@@ -347,12 +315,6 @@ rules:
       - action: action_dynamic_faq
 
 ############################################################################# NOTE Supports Pédagogiques
-  - rule: handle give Supports Pédagogiques flow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "note_supp_peda" # CONFIRMED
-      - action: action_dynamic_final_unit_results
 
   - rule: handle Get Note Supports Pédagogiques affirm
     condition:
@@ -371,12 +333,6 @@ rules:
       - action: action_dynamic_faq
 
 ############################################################################# NOTE Test QCM
-  - rule: handle give Test QCM flow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "note_test_qcm" # CONFIRMED
-      - action: action_dynamic_final_unit_results
 
   - rule: handle Get Note Test QCM affirm
     condition:
@@ -395,12 +351,6 @@ rules:
       - action: action_dynamic_faq
 
 ############################################################################# NOTE Présentation Dossier
-  - rule: handle give Présentation Dossier flow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "note_pres_doss" # CONFIRMED
-      - action: action_dynamic_final_unit_results
 
   - rule: handle Get Note Présentation Dossier affirm
     condition:
@@ -419,12 +369,6 @@ rules:
       - action: action_dynamic_faq
 
 ############################################################################# NOTE Discussion Avec Jury
-  - rule: handle give Discussion Avec Jury flow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "note_diss_jury" # CONFIRMED
-      - action: action_dynamic_final_unit_results
 
   - rule: handle Get Note Discussion Avec Jury affirm
     condition:
@@ -443,12 +387,6 @@ rules:
       - action: action_dynamic_faq
 
 ############################################################################# NOTE Séquence Enseignement 1
-  - rule: handle give Note Séquence Enseignement 1 flow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "note_eval_pres_se" # CONFIRMED
-      - action: action_dynamic_final_unit_results
 
   - rule: handle Get Note Séquence Enseignement 1 affirm
     condition:
@@ -467,12 +405,6 @@ rules:
       - action: action_dynamic_faq
 
 ############################################################################# NOTE Séquence Enseignement 2
-  - rule: handle give Note Séquence Enseignement 2 flow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "note_eval_se" # CONFIRMED
-      - action: action_dynamic_final_unit_results
 
   - rule: handle Get Note Séquence Enseignement 2 affirm
     condition:
@@ -491,12 +423,6 @@ rules:
       - action: action_dynamic_faq
 
 ############################################################################# NOTE Plateforme de TP 1
-  - rule: handle give Note Plateforme de TP 1 flow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "note_eval_pres_ptp" # CONFIRMED
-      - action: action_dynamic_final_unit_results
 
   - rule: handle Get Note Plateforme de TP 1 affirm
     condition:
@@ -515,12 +441,6 @@ rules:
       - action: action_dynamic_faq
 
 ############################################################################# NOTE Plateforme de TP 2
-  - rule: handle give Note Plateforme de TP 2 flow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "note_eval_ptp" # CONFIRMED
-      - action: action_dynamic_final_unit_results
 
   - rule: handle Get Note Plateforme de TP 2 affirm
     condition:
@@ -539,12 +459,6 @@ rules:
       - action: action_dynamic_faq
 
 ############################################################################# NOTE ALL QCM
-  - rule: handle give Note ALL QCM flow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "note_qcm_all" # CONFIRMED
-      - action: action_dynamic_final_unit_results
 
   - rule: handle Get Note ALL QCM affirm
     condition:
@@ -563,12 +477,6 @@ rules:
       - action: action_dynamic_faq
 
 ############################################################################# NOTE Capsules Pédagogiques
-  - rule: handle give Note Capsules Pédagogiques flow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "note_caps_peda_all" # CONFIRMED
-      - action: action_dynamic_final_unit_results
 
   - rule: handle Get Note Capsules Pédagogiques affirm
     condition:
@@ -587,12 +495,6 @@ rules:
       - action: action_dynamic_faq
 
 ############################################################################# NOTE Dissertations
-  - rule: handle give Note Dissertations flow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "note_diss_all" # CONFIRMED
-      - action: action_dynamic_final_unit_results
 
   - rule: handle Get Note Dissertations affirm
     condition:
@@ -611,12 +513,6 @@ rules:
       - action: action_dynamic_faq
 
 ############################################################################# NOTE Séquence Enseignement ALL
-  - rule: handle give Note Séquence Enseignement ALL flow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "note_seq_ens_all" # CONFIRMED
-      - action: action_dynamic_final_unit_results
 
   - rule: handle Get Note Séquence Enseignement ALL affirm
     condition:
@@ -635,12 +531,6 @@ rules:
       - action: action_dynamic_faq
 
 ############################################################################# NOTE Plateforme de TP ALL
-  - rule: handle give Note Plateforme de TP ALL flow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "note_plat_tp_all" # CONFIRMED
-      - action: action_dynamic_final_unit_results
 
   - rule: handle Get Note Plateforme de TP ALL affirm
     condition:
@@ -659,12 +549,6 @@ rules:
       - action: action_dynamic_faq
 
 ############################################################################# NOTE Production Pédagogiques
-  - rule: handle give Note Production Pédagogiques flow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "note_prod_peda_all" # CONFIRMED
-      - action: action_dynamic_final_unit_results
 
   - rule: handle Get Note Production Pédagogiques affirm
     condition:
@@ -683,12 +567,6 @@ rules:
       - action: action_dynamic_faq
 
 ############################################################################# NOTE Entretien Avec Jury
-  - rule: handle give Note Entretien Avec Jury flow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "note_entr_jury_all" # CONFIRMED
-      - action: action_dynamic_final_unit_results
 
   - rule: handle Get Note Entretien Avec Jury affirm
     condition:
@@ -707,12 +585,6 @@ rules:
       - action: action_dynamic_faq
 
 ############################################################################# NOTE Composante 1
-  - rule: handle give Note Composante 1 flow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "note_first_comp" # CONFIRMED
-      - action: action_dynamic_final_unit_results
 
   - rule: handle Get Note Composante 1 affirm
     condition:
@@ -731,12 +603,6 @@ rules:
       - action: action_dynamic_faq
 
 ############################################################################# NOTE Composante 2
-  - rule: handle give Note Composante 2 flow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "note_second_comp" # CONFIRMED
-      - action: action_dynamic_final_unit_results
 
   - rule: handle Get Note Composante 2 affirm
     condition:
@@ -755,12 +621,6 @@ rules:
       - action: action_dynamic_faq
 
 ############################################################################# NOTE Composante 3
-  - rule: handle give Note Composante 3 flow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "note_third_comp" # CONFIRMED
-      - action: action_dynamic_final_unit_results
 
   - rule: handle Get Note Composante 3 affirm
     condition:
@@ -778,47 +638,7 @@ rules:
       - intent: deny
       - action: action_dynamic_faq
 
-############################################################################# Congrat + Deliberation
-# 22-10-2025
-  - rule: handle give Final results flow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "congrats" # CONFIRMED
-      - action: action_congrat_final_results
-
-  - rule: handle give Final results flow after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-        - active_flow: "deliberation" # CONFIRMED
-      - action: action_congrat_final_results
-
 ############################################################################# NOTE SS-Composante
-  - rule: handle give SS-Composante after Authentication
-    steps:
-      - intent: provide_credentials
-      - slot_was_set:
-          - active_flow:
-            - "note_supp_peda"
-            - "note_test_qcm"
-            - "note_pres_doss"
-            - "note_diss_jury"
-            - "note_eval_pres_se"
-            - "note_eval_se"
-            - "note_eval_pres_ptp"
-            - "note_eval_ptp"
-            - "note_qcm_all"
-            - "note_caps_peda_all"
-            - "note_diss_all"
-            - "note_seq_ens_all"
-            - "note_plat_tp_all"
-            - "note_prod_peda_all"
-            - "note_entr_jury_all"
-            - "note_first_comp"
-            - "note_second_comp"
-            - "note_third_comp"
-      - action: action_dynamic_final_unit_results
 
   - rule: handle Get Note SS-Composante affirm
     condition:
@@ -874,22 +694,22 @@ rules:
       - intent: deny
       - action: action_dynamic_faq
 
-  ############################################################################# FINAL RESULTS
-  - rule: handle congrats final results affirm
+############################################################################# FINAL RESULTS
+  - rule: handle give Final results flow after Authentication
     condition:
       - slot_was_set:
-        - active_flow: "congrats"
+        - active_flow: "congrats" # CONFIRMED
+    steps:
+      - intent: affirm
+      - action: action_congrat_final_results
+
+  - rule: handle give Final results flow after Authentication
+    condition:
+      - slot_was_set:
+        - active_flow: "all_bilan" # CONFIRMED
     steps:
       - intent: affirm
       - action: action_bilan_final_results
-
-  - rule: handle congrats final results deny
-    condition:
-      - slot_was_set:
-        - active_flow: "congrats"# NEW : 22-10-2025 ***
-    steps:
-      - intent: deny
-      - action: action_dynamic_faq
 
 ############################################################################# DELIBERATION FINAL RESULTS
   - rule: handle deliberation final results affirm

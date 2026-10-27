@@ -3,15 +3,13 @@
 @author ESSID Saria | Copyright (c) 2025. ESPRIT
 """
 
-import pytest
 from unittest.mock import MagicMock, patch
 
+import pytest
 from rasa_sdk import Tracker
 
 from actions.utils.slots_helpers import (
     get_return_slots_candidat_id_fullname,
-    get_return_slots_authentication,
-    get_return_slots_user_jwt_roles,
     get_return_slots_qa_intent_flow_results,
     get_return_slots_qa_intent_flow,
     get_return_slots_qa_intent_flow_followed,
@@ -41,7 +39,7 @@ PATCH_TARGET = "actions.utils.slots_helpers"
 def mock_all_slots():
     """Mock ALL_SLOTS to control exactly which parameters pass filtering."""
     allowed_slots = [
-        "id_candidat", "full_name", "jwt", "roles", "last_last_question",
+        "id_candidat", "full_name", "roles", "last_last_question",
         "last_question", "sscomp", "last_answer", "predicted_intent",
         "active_flow", "last_intent", "forward_level", "session", "speciality", "grade"
     ]
@@ -67,20 +65,6 @@ def test_get_return_slots_candidat_id_fullname():
     assert any(e.get("name") == "id_candidat" and e.get("value") == "candidat_123" for e in events)
     assert any(e.get("name") == "full_name" and e.get("value") == "Saria Essid" for e in events)
 
-
-def test_get_return_slots_authentication():
-    events = get_return_slots_authentication("jwt_token", ["ADMIN"], "candidat_123", "Saria Essid")
-    assert len(events) == 4
-    assert any(e.get("name") == "jwt" and e.get("value") == "jwt_token" for e in events)
-    assert any(e.get("name") == "roles" and e.get("value") == ["ADMIN"] for e in events)
-
-
-def test_get_return_slots_user_jwt_roles():
-    events = get_return_slots_user_jwt_roles("jwt_token", ["USER"])
-    assert len(events) == 2
-    assert any(e.get("name") == "jwt" and e.get("value") == "jwt_token" for e in events)
-    assert any(e.get("name") == "roles" and e.get("value") == ["USER"] for e in events)
-
 def test_get_return_slots_qa_intent_flow():
     events = get_return_slots_qa_intent_flow("Q", "A", "sscomp_val", "intent_val", "flow_val")
     assert len(events) == 5
@@ -100,21 +84,11 @@ def test_get_return_slots_flow():
     assert len(events) == 1
     assert any(e.get("name") == "active_flow" and e.get("value") == "new_active_flow" for e in events)
 
-
-def test_get_return_slots_for_conversations():
-    slots_payload = {"id_candidat": "c_1", "jwt": "token_xyz"}
-    with patch(f"{PATCH_TARGET}.log_info_text") as mock_log_info:
-        events = get_return_slots_for_conversations(slots_payload)
-        assert len(events) == 2
-        assert mock_log_info.call_count == 2
-
-
 def test_clear_slots(mock_all_slots):
     events = clear_slots()
     assert len(events) == len(mock_all_slots)
     for event in events:
         assert event.get("value") is None
-
 
 def test_empty_slots():
     assert empty_slots() == []
@@ -151,8 +125,6 @@ def test_all_except_blocks_coverage():
             patch(f"{PATCH_TARGET}.log") as _mock_logger:
         # Sequentially call all helpers wrapped in try-except statements
         assert get_return_slots_candidat_id_fullname("id", "name") == []
-        assert get_return_slots_authentication("jwt", [], "id", "name") == []
-        assert get_return_slots_user_jwt_roles("jwt", []) == []
         assert get_return_slots_qa_intent_flow_results("q", "a", "s", "i", "f", "l", "m", 1) == []
         assert get_return_slots_qa_intent_flow("q", "a", "s", "i", "f") == []
         assert get_return_slots_qa_intent_flow_followed("q", "s", "i", 1, "l", "f", "lq") == []

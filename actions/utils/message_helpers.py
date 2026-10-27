@@ -13,7 +13,6 @@ from actions.utils.messages_dispatcher import MessageDispatcher
 import logging
 
 log = logging.getLogger("rasa-actions")
-_SENSITIVE_KEYS = {"password", "mdp", "pass", "jwt", "token", "authorization"}
 
 def send_multiple_messages(dispatcher, reply: Text):
     """Legacy function - delegate to MessageDispatcher"""
@@ -117,10 +116,6 @@ def update_payload(action_label, message, exception, payload):
     # append answer
     answer = f"<br/>{BOT_MESSAGES.get('technical_problem_exception')} {action_label} : <br/>{message} => <br/>{exception}"
     log.exception(message)
-
-    # omit sensitive data
-    payload = {k: v for k, v in payload.items()
-               if k.lower() not in _SENSITIVE_KEYS}
 
     # integrate botReply to payload and notify team leader with API
     payload["botReply"] = answer

@@ -75,7 +75,7 @@ async def test_action_get_dynamic_response_advice_flow_mutations(
     action = ActionGetDynamicResponse(mock_service)
 
     with patch(f"{PATCH_TARGET}.get_util_values_with_log", return_value=(
-            "user", "Saria", "jwt", [], "usr_1", "sess_1", "Affirmative message text", "lq", "la", 0.95, flow, intent
+            "user", "Saria", [], "usr_1", "sess_1", "Affirmative message text", "lq", "la", 0.95, flow, intent
     )), patch(f"{PATCH_TARGET}.get_semantic_random_reply", return_value="Step execution guide reply text"), \
             patch(f"{PATCH_TARGET}.log_chat", new_callable=AsyncMock) as _mock_log:
         await action.run(dispatcher, tracker, {})
@@ -94,7 +94,7 @@ async def test_action_get_dynamic_response_json_string_parsing_fallback(dispatch
     mock_service.get_dynamic_response = AsyncMock(return_value=json.dumps({"reply": "Extracted value matrix"}))
 
     with patch(f"{PATCH_TARGET}.get_util_values_with_log", return_value=(
-            "user", "Saria", "jwt", [], "usr_1", "sess_1", "Plain text dynamic lookup query", "lq", "la", 0.99, "flow",
+            "user", "Saria", "usr_1", "sess_1", "Plain text dynamic lookup query", "lq", "la", 0.99, "flow",
             "generic_intent"
     )), patch(f"{PATCH_TARGET}.get_semantic_random_reply",
               return_value="Extracted answer message string block") as mock_random_reply, \
@@ -121,7 +121,7 @@ async def test_action_get_dynamic_response_intent_routing_outputs(dispatcher, tr
     action = ActionGetDynamicResponse(mock_service)
 
     with patch(f"{PATCH_TARGET}.get_util_values_with_log", return_value=(
-            "user", "Saria", "jwt", [], "usr_1", "sess_1", question_text, "lq", "la", 0.95, "flow_ctx", target_intent
+            "user", "Saria", "usr_1", "sess_1", question_text, "lq", "la", 0.95, "flow_ctx", target_intent
     )), patch(f"{PATCH_TARGET}.get_semantic_random_reply",
               return_value="Dynamic structured evaluation reply context mapping response value"), \
             patch(f"{PATCH_TARGET}.send_multiple_messages_forwarded_by_buttons") as mock_send_buttons, \
@@ -148,11 +148,10 @@ async def test_action_get_dynamic_response_intent_routing_outputs(dispatcher, tr
 @pytest.mark.asyncio
 async def test_action_get_dynamic_response_circuit_breaker_handling(dispatcher, tracker, mock_service):
     action = ActionGetDynamicResponse(mock_service)
-    mock_service.get_dynamic_response.side_effect = CircuitBreakerError(MagicMock(),
-                                                                        "Spring authentication circuit open")
+    mock_service.get_dynamic_response.side_effect = CircuitBreakerError(MagicMock(), "Spring authentication circuit open")
 
     with patch(f"{PATCH_TARGET}.get_util_values_with_log", return_value=(
-            "user", "Saria", "jwt", [], "usr_1", "sess_1", "text", "lq", "la", 0.9, "flow", "intent"
+            "user", "Saria", "usr_1", "sess_1", "text", "lq", "la", 0.9, "flow", "intent"
     )), patch(f"{PATCH_TARGET}.alert_technical_problem_exception",
               return_value="Circuit broken answer context fallback") as mock_alert, \
             patch(f"{PATCH_TARGET}.log_chat", new_callable=AsyncMock) as _mock_log:
@@ -170,7 +169,7 @@ async def test_action_get_dynamic_response_key_error_handling(dispatcher, tracke
     mock_service.get_dynamic_response.side_effect = KeyError("missing_payload_field_key")
 
     with patch(f"{PATCH_TARGET}.get_util_values_with_log", return_value=(
-            "user", "Saria", "jwt", [], "usr_1", "sess_1", "text", "lq", "la", 0.9, "flow", "intent"
+            "user", "Saria", "usr_1", "sess_1", "text", "lq", "la", 0.9, "flow", "intent"
     )), patch(f"{PATCH_TARGET}.send_fallback_problem_to_dsi_forwarded_by_buttons",
               return_value="Key missing notification context fallback") as mock_fallback, \
             patch(f"{PATCH_TARGET}.log_chat", new_callable=AsyncMock) as mock_log:
@@ -186,7 +185,7 @@ async def test_action_get_dynamic_response_json_decode_and_type_error_handling(d
     mock_service.get_dynamic_response.side_effect = TypeError("Invalid target serialization model format mapping")
 
     with patch(f"{PATCH_TARGET}.get_util_values_with_log", return_value=(
-            "user", "Saria", "jwt", [], "usr_1", "sess_1", "text", "lq", "la", 0.9, "flow", "intent"
+            "user", "Saria", "usr_1", "sess_1", "text", "lq", "la", 0.9, "flow", "intent"
     )), patch(f"{PATCH_TARGET}.send_fallback_problem_to_dsi_forwarded_by_buttons",
               return_value="Parsing type fallback error string representation") as mock_fallback, \
             patch(f"{PATCH_TARGET}.log_chat", new_callable=AsyncMock) as mock_log:
@@ -204,7 +203,7 @@ async def test_action_get_dynamic_response_generic_exception_bubble_up(dispatche
 
     # ✅ FIX: Wrap the execution context correctly to capture the __wrapped__ bubbling logic cleanly
     with patch(f"{PATCH_TARGET}.get_util_values_with_log", return_value=(
-            "user", "Saria", "jwt", [], "usr_1", "sess_1", "text", "lq", "la", 0.9, "flow", "intent"
+            "user", "Saria", [], "usr_1", "sess_1", "text", "lq", "la", 0.9, "flow", "intent"
     )), patch(f"{PATCH_TARGET}.alert_technical_problem_exception",
               return_value="Fatal breakdown notification fallback text value"), \
             patch(f"{PATCH_TARGET}.log_chat", new_callable=AsyncMock):
@@ -222,7 +221,7 @@ async def test_action_get_next_details_successful_pipeline_execution(dispatcher,
     assert action.name() == "action_get_next_details_response"
 
     with patch(f"{PATCH_TARGET}.get_util_values_with_log", return_value=(
-            "user_saria", "Saria FullName", "jwt_token_string", ["USER"], "usr_id_99", "sess_details_77",
+            "user_saria", "Saria FullName", ["USER"], "usr_id_99", "sess_details_77",
             "User input text", "Calculated question context query text", "Previous bot output text block", 0.98,
             "active_details_flow_state", "request_details_intent"
     )), patch(f"{PATCH_TARGET}.send_multiple_messages_forwarded_by_buttons") as mock_send_buttons, \
@@ -258,7 +257,7 @@ async def test_action_get_next_details_circuit_breaker_error_handling(dispatcher
                                                                               "Details microservice pipeline closed")
 
     with patch(f"{PATCH_TARGET}.get_util_values_with_log", return_value=(
-            "user", "Saria", "jwt", [], "usr_1", "sess_1", "user_input", "q", "a", 0.9, "details_flow", "intent"
+            "user", "Saria", [], "usr_1", "sess_1", "user_input", "q", "a", 0.9, "details_flow", "intent"
     )), patch(f"{PATCH_TARGET}.alert_technical_problem_exception",
               return_value="Circuit open detail recovery text block") as mock_alert, \
             patch(f"{PATCH_TARGET}.log_chat", new_callable=AsyncMock) as mock_log:
@@ -275,7 +274,7 @@ async def test_action_get_next_details_key_error_handling(dispatcher, tracker, m
     mock_service.get_next_detailed_response.side_effect = KeyError("target_details_index_error")
 
     with patch(f"{PATCH_TARGET}.get_util_values_with_log", return_value=(
-            "user", "Saria", "jwt", [], "usr_1", "sess_1", "user_input", "q", "a", 0.9, "details_flow", "intent"
+            "user", "Saria", [], "usr_1", "sess_1", "user_input", "q", "a", 0.9, "details_flow", "intent"
     )), patch(f"{PATCH_TARGET}.send_fallback_problem_to_dsi_forwarded_by_buttons",
               return_value="Key fallback representation") as mock_fallback, \
             patch(f"{PATCH_TARGET}.log_chat", new_callable=AsyncMock) as mock_log:
@@ -291,7 +290,7 @@ async def test_action_get_next_details_json_decode_and_type_error_handling(dispa
     mock_service.get_next_detailed_response.side_effect = json.JSONDecodeError("Expecting value", "doc", 0)
 
     with patch(f"{PATCH_TARGET}.get_util_values_with_log", return_value=(
-            "user", "Saria", "jwt", [], "usr_1", "sess_1", "user_input", "q", "a", 0.9, "details_flow", "intent"
+            "user", "Saria", [], "usr_1", "sess_1", "user_input", "q", "a", 0.9, "details_flow", "intent"
     )), patch(f"{PATCH_TARGET}.send_fallback_problem_to_dsi_forwarded_by_buttons",
               return_value="JSON corruption response text override value") as mock_fallback, \
             patch(f"{PATCH_TARGET}.log_chat", new_callable=AsyncMock) as mock_log:
@@ -310,7 +309,7 @@ async def test_action_get_next_details_generic_exception_bubbling(dispatcher, tr
 
     # ✅ FIX: Wrap the execution context correctly to capture the __wrapped__ bubbling logic cleanly
     with patch(f"{PATCH_TARGET}.get_util_values_with_log", return_value=(
-            "user", "Saria", "jwt", [], "usr_1", "sess_1", "user_input", "q", "a", 0.9, "details_flow", "intent"
+            "user", "Saria", [], "usr_1", "sess_1", "user_input", "q", "a", 0.9, "details_flow", "intent"
     )), patch(f"{PATCH_TARGET}.alert_technical_problem_exception",
               return_value="Generic crash payload string text block"), \
             patch(f"{PATCH_TARGET}.log_chat", new_callable=AsyncMock):

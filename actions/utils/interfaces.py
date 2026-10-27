@@ -35,11 +35,11 @@ class IResultsService(ABC):
         pass
 
     @abstractmethod
-    async def verif_credentials(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+    async def get_info_by_button_label(self, payload: Dict[str, Any]) -> Response:
         pass
 
     @abstractmethod
-    async def get_info_by_button_label(self, payload: Dict[str, Any]) -> Response:
+    async def get_chat_session_identity(self, payload: Dict[str, Any], token) -> Response:
         pass
 
     @abstractmethod

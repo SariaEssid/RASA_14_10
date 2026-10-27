@@ -6,21 +6,9 @@ pipeline:
   - name: WhitespaceTokenizer
     token_pattern: r'[^\s=;,:]+|\S'
 
-  - name: actions.nlu_components.word_limit_checker.WordLimitChecker
-
   - name: RegexFeaturizer
 
   - name: LexicalSyntacticFeaturizer   # ⭐ ADD THIS
-
-  - name: RegexEntityExtractor # 2. RegexEntityExtractor with improved patterns
-    case_sensitive: false
-    patterns:
-      - name: "username"
-        pattern: r'(?:username|user|login|id|identifiant)\s*[=:;]\s*([^\s;,]*)'
-      - name: "password"
-        pattern: r'(?:password|pass|mdp|mot\s*de\s*passe)\s*[=:;]\s*([^\n]+)'  # Capture until newline
-      - name: "language"
-        pattern: r'(?:français|française|francaise|francais|french|anglais|english)'
 
   - name: CountVectorsFeaturizer   # word-level
   - name: CountVectorsFeaturizer   # char-level
@@ -49,11 +37,6 @@ policies: # show fallback
     constrain_similarities: True  # ✅ Better training stability when using cross-entropy loss (the default in Rasa). + More interpretable confidence scores (since they're normalized between 0 and 1).
     max_history: 5
     epochs: 200
-
-regex:
-  - name: provide_credentials
-    pattern: (?i)(?:username|user|login|identifiant).*(?:password|pass|mdp|mot\s*de\s*passe)
-#    pattern: (?i)username|user|login|identifiant.*(password|pass|mdp|mot\s*de\s*passe)
 
 env_vars:
   SQLALCHEMY_SILENCE_UBER_WARNING: "1"

@@ -12,7 +12,6 @@ class ActiveIntents(str, Enum):
     ASK_RESULTAT_SSCOMP = "ask_resultat_sscomp"
     ASK_RESULTAT_FINAL = "ask_resultat_final"
     ASK_STATUS_DELIBERATION_RESULTAT = "ask_status_deliberation_result"
-    PROVIDE_CREDENTIALS = "provide_credentials"
     ASK_DENY = "deny"
     ASK_AFFIRM = "affirm"
     ASK_ABOUT_CANDIDATURE_PASSAGE_GRADE = "ask_about_candidature_passage_grade"
@@ -260,6 +259,14 @@ class ActiveIntents(str, Enum):
         "give_advice_3",
         "how_authenticate_with_chatbot",
         "affirm"
+    ]
+
+    FINAL_RESULTS_INTENTS=[
+        "ask_resultat_dissertation",
+        "ask_resultat_capsule",
+        "ask_resultat_sscomp",
+        "ask_resultat_final",
+        "ask_status_deliberation_result",
     ]
 
     NO_AFFIRM_INTENTS = [

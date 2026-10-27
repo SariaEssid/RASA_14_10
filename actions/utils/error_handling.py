@@ -47,5 +47,5 @@ def handle_action_errors(original_func: Callable) -> Callable:
             }
             await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, "CENTRAL_HANDLING_ERROR", payload_tech_error, e)
 
-        return [SlotSet("password", None)]
+        return []
     return wrapper

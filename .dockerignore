@@ -11,7 +11,7 @@
 .drone-*.yml
 
 # Environment files
-.env
+.env.dev
 .env.*
 
 # Python artifacts
@@ -32,8 +32,6 @@ tests/
 README.md
 *.md
 index.html
-current.txt
-res.txt
 *.log
 
 # Rasa build artifacts (will be generated at runtime)
@@ -47,6 +45,3 @@ test_results/
 
 # Model files (large, should not be baked in)
 *.gguf
-
-# Old files
-requirements.txt.old

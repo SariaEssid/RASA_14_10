@@ -1,6 +1,6 @@
 # 🧠 AI Chatbot Platform
 
-A smart, multilingual chatbot platform developed by **[ESSID Saria]** using **Python**, **Spring Boot**, designed for internal use at **[DSI]**.
+A smart, multilingual chatbot developed by **[ESSID Saria]** with **Rasa** and Python, designed for internal use at **[DSI]**.
 
 > ⚠️ **NOTICE**  
 > This project is intended **strictly for internal use** within DSI. Unauthorized reproduction, distribution, or reuse—particularly for external, personal, academic, or commercial use—is **prohibited**.
@@ -9,10 +9,31 @@ A smart, multilingual chatbot platform developed by **[ESSID Saria]** using **Py
 
 ## 🛠️ Technologies Used
 
-- **Backend API:** Spring Boot (Java)
-- **AI Core / NLP Engine:** Python (Rasa or custom engine)
-- **Authentication:** JWT-based (Spring Security)
-- **Deployment:** Docker (Optional), NGINX (Optional)
+- **Conversational orchestration:** Rasa
+- **Custom actions and routing:** Python
+- **Known-question retrieval:** FAISS
+- **Complex, document-based questions:** RAG retrieval over PDF documents
+- **Deployment:** Docker (where configured)
+
+---
+
+## 🔎 Hybrid Question Answering
+
+The chatbot uses two retrieval paths, selected according to the question:
+
+- **Known questions:** retrieve a matching answer from the FAISS index.
+- **Complex questions:** use the RAG service to retrieve relevant context from PDF documents; Rasa then uses that context to prepare the response.
+
+```mermaid
+flowchart LR
+    User[User] --> Rasa[Rasa chatbot]
+    Rasa -->|Known question| FAISS[FAISS known-question index]
+    FAISS -->|Retrieved answer| Rasa
+    Rasa -->|Complex document question| RAG[RAG service]
+    PDFs[PDF knowledge base] --> RAG
+    RAG -->|Retrieved context| Rasa
+    Rasa -->|Response| User
+```
 
 ---
 

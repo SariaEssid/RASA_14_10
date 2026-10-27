@@ -5,12 +5,12 @@ actions/answer_from_file/llm_helpers.py
 """
 
 from __future__ import annotations
-import httpx
 
 import os
 from datetime import datetime, timezone
 from typing import List, cast
 
+import httpx
 import yaml
 
 from actions.actions import normalize_text, check_is_excluded, remove_excluded_patterns, START_WORDS
@@ -27,7 +27,9 @@ from actions.logging.logging_helpers import log_info_text, log_exception_text
 from actions.semantic.semantic_actions import is_followup
 from actions.settings.config import LANG_CHAIN_URL
 from actions.settings.settings import settings
+from actions.utils.message_helpers import send_fallback_problem_to_dsi_forwarded_by_buttons
 from actions.utils.slots_helpers import get_slots_to_set_last_answer_flow, get_return_slots_for_conversations
+
 
 class RAGServiceUnavailable(Exception):
     pass
@@ -492,10 +494,7 @@ def mapping_old_new_grades(original_grades):
 
 def get_util_values(intent, active_flow, sscomp_entity_values, native_question, domains, nbr_chunks):
 
-    if intent in ActiveIntents.MANAGE_PWDS_INTENTS:
-        domains = ["mdp"]
-        log_info_text("##### intent-1.1 : ", intent + " -> " + str(domains))
-    elif intent == ActiveIntents.ASK_GRANULAR_ADVICES_PG.value:
+    if intent == ActiveIntents.ASK_GRANULAR_ADVICES_PG.value:
         domains = ["granularadvices"]
         log_info_text("##### intent-1.2 : ", intent + " -> " + str(domains))
     elif intent == ActiveIntents.ASK_GLOBAL_ADVICES_PG.value:
@@ -544,6 +543,15 @@ def get_util_values(intent, active_flow, sscomp_entity_values, native_question, 
 
     return native_question, domains, nbr_chunks
 
+def get_payload_rasa_rag_service():
+    return {
+        "userId": None,
+        "sessionId": None,
+        "userInput": None,
+        "rasaIntent": str(ActiveIntents.NLU_FALLBACK.value),
+        "confidence": 1,
+        "messageExchangeDate": datetime.now(timezone.utc).isoformat()
+    }
 
 def track_prompt_decision_params(action_label, prompt, decision_infos):
     log_info_text(action_label, "🎯 prompting : " + prompt)
@@ -614,6 +622,7 @@ def signal_extract(question: str, last_question: str):
         "no_muted": no_muted
     }
 
+
 async def check_is_dead_end(self, dispatcher, action_label, last_question, last_response, current_question):
 
     prompt = check_is_dead_end_prompt(last_question, last_response, current_question)
@@ -628,16 +637,6 @@ async def check_is_dead_end(self, dispatcher, action_label, last_question, last_
     log_info_text("🎯 DEAD END - 2 : ", answer)
 
     return answer
-
-def get_payload_rasa_rag_service():
-    return {
-        "userId": None,
-        "sessionId": None,
-        "userInput": None,
-        "rasaIntent": str(ActiveIntents.NLU_FALLBACK.value),
-        "confidence": 1,
-        "messageExchangeDate": datetime.now(timezone.utc).isoformat()
-    }
 
 def get_academic_stuff_rules():
     return """\n

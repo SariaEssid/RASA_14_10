@@ -3,13 +3,17 @@ actions/entry/entry_actions.py
 
 @author ESSID Saria | Copyright (c) 2025. ESPRIT
 """
+import json
+import logging
 import time
 from typing import Text, Dict, Any, List
 from typing import TypeVar
+
 from aiocircuitbreaker import CircuitBreakerError
 from rasa_sdk import Action, Tracker
 from rasa_sdk.events import SlotSet
 from rasa_sdk.executor import CollectingDispatcher
+
 from actions.actions import get_payload, get_semantic_random_reply, generate_composante_buttons, \
     get__decision_mode__last_intent, get_local_header, append_friendly_intro_to_answer
 from actions.answer_from_file.answer_from_file_actions import BaseDynamicLLMAction
@@ -17,19 +21,17 @@ from actions.answer_from_file.bot_missions import get_fallback_bot_mission_with_
 from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.ActionsNome import ActionsNome
 from actions.constants.ActiveIntents import ActiveIntents
-from actions.constants.Constants import BOT_MESSAGES, FEEDBACK_BUTTONS, ADVICE_PLANNING_BUTTONS, GRILLE_SS_COMPOSANTES, DIRECT_HAND_FLAG
+from actions.constants.Constants import BOT_MESSAGES, FEEDBACK_BUTTONS, ADVICE_PLANNING_BUTTONS, GRILLE_SS_COMPOSANTES, \
+    DIRECT_HAND_FLAG
 from actions.constants.FlowType import FlowType, INTENT_TO_FLOW
 from actions.logging.logger import log_chat
 from actions.logging.logging_helpers import get_util_values_with_log, log_debug_text, log_info_text, \
     get_last_conversation
-from actions.settings.settings import settings
 from actions.utils.error_handling import handle_action_errors
 from actions.utils.interfaces import IResultsService
-from actions.utils.message_helpers import send_multiple_messages_forwarded_by_buttons, send_fallback_problem_to_dsi_forwarded_by_buttons, alert_technical_problem_exception
+from actions.utils.message_helpers import send_multiple_messages_forwarded_by_buttons, \
+    send_fallback_problem_to_dsi_forwarded_by_buttons, alert_technical_problem_exception
 from actions.utils.slots_helpers import get_conversational_slots, get_return_slots_for_conversations
-
-import json
-import logging
 
 log = logging.getLogger("rasa-actions")
 ServiceType = TypeVar('ServiceType', bound='IResultsService')
@@ -53,7 +55,7 @@ class ActionGetDynamicResponse(BaseDynamicLLMAction):
     ) -> List[Dict[Text, Any]]:
         start_time = time.time()
         action_label = ActionsLabel.PY_DYNAMIC_RESPONSE.value
-        username, full_name, user_jwt, user_roles, user_id, session_id, question, last_question, last_answer, confidence, active_flow, intent = get_util_values_with_log(tracker, action_label)
+        username, full_name, user_roles, user_id, session_id, question, last_question, last_answer, confidence, active_flow, intent = get_util_values_with_log(tracker, action_label)
         payload_tech_error = get_payload(user_id, session_id, question, intent, confidence)
 
         get__decision_mode__last_intent(action_label, tracker)
@@ -247,7 +249,7 @@ class ActionGetNextDetails(Action):
     ) -> List[Dict[Text, Any]]:
 
         action_label = ActionsLabel.PY_GET_NEXT_DETAILS_RESPONSE.value
-        username, full_name, user_jwt, user_roles, user_id, session_id, user_input, question, answer, confidence, active_flow, intent = get_util_values_with_log(
+        username, full_name, user_roles, user_id, session_id, user_input, question, answer, confidence, active_flow, intent = get_util_values_with_log(
             tracker, action_label)
         payload_tech_error = get_payload(user_id, session_id, user_input, intent, confidence)
 

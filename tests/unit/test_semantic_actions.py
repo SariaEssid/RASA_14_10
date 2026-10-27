@@ -4,8 +4,7 @@
 """
 
 import json
-import unittest
-from unittest.mock import MagicMock, AsyncMock, patch, mock_open
+from unittest.mock import MagicMock, patch, mock_open
 
 import numpy as np
 import pytest
@@ -23,8 +22,7 @@ from actions.semantic.semantic_actions import (
     ActionSemanticQA,
     encode_for_faiss,
     safe_faiss_search,
-    flatten_events,
-    is_followup
+    flatten_events
 )
 from actions.utils.models import FAQCandidate
 

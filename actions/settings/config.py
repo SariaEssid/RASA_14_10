@@ -36,7 +36,8 @@ def validate_environment():
         "MARKDOWN_PATH_FILES",
         "PHI3_PATH",
         "RAG_DEFAULT_CHUNKS",
-        "EXPERT_TABLE_TOP_K"
+        "EXPERT_TABLE_TOP_K",
+        "RASA_TO_SPRING_TOKEN"
     ]
 
     missing = [
