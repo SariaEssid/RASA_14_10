@@ -92,7 +92,7 @@ BOT_MESSAGES = {
         "Oopsy ! 💥 Un problème technique est survenu.\nNotre équipe est déjà notifiée 🛠️ et travaille à la résolution.\nVeuillez réessayer ultérieurement. Merci de votre patience ! 🙏",
         "Oopsy ! 😬 On dirait qu'il y a un petit pépin technique.\nPas d'inquiétude, nos experts sont sur le coup 🧑‍💻 pour régler ça !\nRevenez nous voir dans quelques minutes. Merci ! 😊",
         "🙏 Mes excuses, Problème technique temporaire.\n📨 Nous avons été informés et travaillons dessus.\nMerci de réessayer plus tard. ⏳",
-        "Désolé 😔, une erreur inattendue est survenue. 🛑\n📨 L'alerte a été envoyée à notre équipe de support 🧑‍💻.\nNous vous prions de réessayer d'ici peu. Merci de votre compréhension. 💙"
+        "Désolé 😔 , une erreur inattendue est survenue. 🛑\n📨 L'alerte a été envoyée à notre équipe de support 🧑‍💻.\nNous vous prions de réessayer d'ici peu. Merci de votre compréhension. 💙"
     ],
     "unsaved_fallback": "⚠️ Désolé, votre retour n'a pas été sauvegardé.`\n Veuillez continuer. 😊",
     "affirm_without_discussion": "Oopsy, 🙃\nVous êtes sur un Flux incorrect 😅!\n🔄 Merci de préciser votre demande.🌹",

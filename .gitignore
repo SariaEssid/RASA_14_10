@@ -21,6 +21,7 @@ local/
 
 # Rasa specific
 .rasa/
+.venv_rasa/
 rasa-temp-*/
 *.tar.gz
 *.zip

@@ -9,6 +9,7 @@ import logging
 from typing import Text, Dict, Any, List
 from typing import TypeVar
 
+import httpx
 from aiocircuitbreaker import CircuitBreakerError
 from rasa_sdk import Action, Tracker
 from rasa_sdk.events import SlotSet, FollowupAction
@@ -732,22 +733,49 @@ async def _handle_decision(dispatcher, dto: dict):
     else:
         send_message_forwarded_by_buttons(dispatcher, dto['messageText'])
 
-async def get_auth_binding_json(tracker: Tracker, service: IResultsService, user_id):
-    auth_binding_json = None
-    auth_binding_data = await service.get_chat_session_identity({"senderId": user_id}, rasa_to_spring_token)
-    log_info_text("action", f"user_id = {user_id}")
-    log_info_text("action", f"RASA_TO_SPRING_TOKEN = {rasa_to_spring_token}")
 
-    if auth_binding_data and isinstance(auth_binding_data, str):
+async def get_auth_binding_json(
+    tracker: Tracker,
+    service: IResultsService,
+    user_id
+):
+    # Clear any previously stored identity before validating a new binding.
+    tracker.slots["id_candidat"] = None
+    tracker.slots["full_name"] = None
+
+    try:
+        auth_binding_data = await service.get_chat_session_identity(
+            {"senderId": user_id},
+            rasa_to_spring_token
+        )
+    except (httpx.HTTPError, TimeoutError):
+        return None
+
+    # Accept either a JSON string or an already-parsed dictionary.
+    if isinstance(auth_binding_data, str):
         try:
-            parsed = json.loads(auth_binding_data)
-        except ValueError:
-            parsed = None
-        if isinstance(parsed, dict) and parsed.get("userId"):  # must contain a user
-            auth_binding_json = parsed
+            auth_binding_json = json.loads(auth_binding_data)
+        except json.JSONDecodeError:
+            return None
 
-        tracker.slots["id_candidat"] = auth_binding_json.get("userId")
-        tracker.slots["full_name"] = auth_binding_json.get("fullName")
+    elif isinstance(auth_binding_data, dict):
+        auth_binding_json = auth_binding_data
+
+    else:
+        return None
+
+    # The response must be a dictionary containing a non-empty userId.
+    if not isinstance(auth_binding_json, dict):
+        return None
+
+    bound_user_id = auth_binding_json.get("userId")
+
+    if bound_user_id is None or not str(bound_user_id).strip():
+        return None
+
+    # Populate identity slots only after validation succeeds.
+    tracker.slots["id_candidat"] = bound_user_id
+    tracker.slots["full_name"] = auth_binding_json.get("fullName")
 
     return auth_binding_json
 

@@ -72,7 +72,7 @@ class Settings(BaseSettings):
     # -------------------------
     # Performance
     # -------------------------
-    MAX_USER_QUESTION_WORDS: int = 300
+    MAX_USER_QUESTION_WORDS: int = 50
     MAX_CONNECTIONS: int = 200
     MAX_KEEPALIVE_CONNECTIONS: int = 50
     KEEPALIVE_EXPIRY: float = 30.0

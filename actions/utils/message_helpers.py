@@ -133,7 +133,7 @@ def exit_for_empty_and_long_question(dispatcher, question) -> bool:
     if not question or len(question) < 3:
         dispatcher.utter_message(BOT_MESSAGES.get('skip_little_question'))
         return True
-    if len(question) > settings.MAX_USER_QUESTION_WORDS:
+    if len(question.split()) > settings.MAX_USER_QUESTION_WORDS:
         dispatcher.utter_message(BOT_MESSAGES.get('skip_long_question'))
         return True
     return False
