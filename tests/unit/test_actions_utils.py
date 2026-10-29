@@ -7,26 +7,16 @@ tests/unit/test_actions_utils.py
 from actions.actions import (
     remove_excluded_patterns,
     check_is_excluded,
-    safe_get_note,
-    classify_results,
     get_payload,
-    ensure_complete_bullets,
-    contains_number,
     clean_response,
     format_response_steps,
-    format_response_all,
-    remove_trailing_stars,
     clean_llm_response,
-    return_to_next_line,
-    get_formatted_next_line,
-    get_name,
     ajuster_session_passage_grade,
     reformulate_session_if_hallucinate,
     normalize_text,
-    normalize_synonyms,
-    normalize_text_strict,
-    detecter_mots_cles
+    normalize_text_strict
 )
+from actions.grade_passage_results.grade_passage_results_actions import safe_get_note, classify_results
 
 
 def test_remove_excluded_patterns():
@@ -102,24 +92,6 @@ def test_get_payload():
     assert payload["sessionId"] == "s1"
     assert payload["confidence"] == 0.95
 
-
-def test_ensure_complete_bullets():
-    text = "- valid.\n- invalid"
-
-    result = ensure_complete_bullets(text)
-
-    assert "- valid." in result
-    assert "- invalid" not in result
-
-
-def test_contains_number_true():
-    assert contains_number("abc123") is True
-
-
-def test_contains_number_false():
-    assert contains_number("abc") is False
-
-
 def test_clean_response():
     result = clean_response("hello.world.test")
 
@@ -134,20 +106,6 @@ def test_format_response_steps():
     assert "1. hello." in result
 
 
-def test_format_response_all():
-    text = "Hello. World."
-
-    result = format_response_all(text)
-
-    assert "\n" in result
-
-
-def test_remove_trailing_stars():
-    result = remove_trailing_stars("hello\n**")
-
-    assert result == "hello"
-
-
 def test_clean_llm_response():
     text = "\n\nhello\n\n\nworld"
 
@@ -155,19 +113,6 @@ def test_clean_llm_response():
 
     assert "hello" in result
     assert "world" in result
-
-
-def test_return_to_next_line():
-    result = return_to_next_line("Hello.World.")
-
-    assert "\n\n" in result
-
-
-def test_get_formatted_next_line():
-    result = get_formatted_next_line("A.B.C")
-
-    assert ".\n" in result
-
 
 def test_get_name():
     result = get_name("/tmp/hierarchy_score.pdf")
@@ -196,32 +141,7 @@ def test_normalize_text():
 
     assert result == "ecole"
 
-
-def test_normalize_synonyms():
-    result = normalize_synonyms("ÉCOLE")
-
-    assert result == "ecole"
-
-
 def test_normalize_text_strict():
     result = normalize_text_strict("École!!! Test")
 
     assert result == "ecole test"
-
-
-def test_detecter_mots_cles_true():
-    result = detecter_mots_cles(
-        "hello world",
-        ["world"]
-    )
-
-    assert result is True
-
-
-def test_detecter_mots_cles_false():
-    result = detecter_mots_cles(
-        "hello",
-        ["xyz"]
-    )
-
-    assert result is False

@@ -6,7 +6,6 @@ tests/unit/test_text_processing.py
 
 from actions.actions import (
     remove_excluded_patterns,
-    contains_number,
     clean_llm_response
 )
 
@@ -15,10 +14,6 @@ def test_remove_excluded_patterns():
     result = remove_excluded_patterns(input_text)
 
     assert "il sera présent ?" in result
-
-def test_contains_number():
-    assert contains_number("Note: 15/20") is True
-    assert contains_number("Pas de note") is False
 
 def test_clean_llm_response():
     dirty_text = "Détails.\n\n\nFin."

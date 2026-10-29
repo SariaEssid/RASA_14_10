@@ -5,7 +5,7 @@ actions/answer_from_file/llm_helpers.py
 """
 
 from __future__ import annotations
-
+import re
 import os
 from datetime import datetime, timezone
 from typing import List, cast
@@ -194,8 +194,6 @@ def find_conf_file_path(action_label, folder_label, file_name):
     log_info_text(action_label, "ESSID path" + file_path)
     return file_path
 
-import re
-
 def rewrite_using_slots_prod_grade(native_question, detected_slots, synonyms_lookup, canonical_mapping):
 
     log_info_text("ESSID123 - REWRITE - detected_slot : ", f"{detected_slots}")
@@ -223,44 +221,6 @@ def rewrite_using_slots_prod_grade(native_question, detected_slots, synonyms_loo
         # Escape terms and wrap each term in word boundary lookarounds: (?<!\w)term(?!\w)
         escaped_terms = sorted(
             [rf"(?<!\w){re.escape(str(t))}(?!\w)" for t in slot_terms if t],
-            key=len,
-            reverse=True
-        )
-
-        pattern = re.compile("|".join(escaped_terms), re.IGNORECASE)
-
-        rewritten_question = pattern.sub(canonical_value, rewritten_question)
-
-        log_info_text("ESSID123 - REWRITED -> ", f"{pattern} * {canonical_value} => {rewritten_question}")
-
-    log_info_text("ESSID123 - REWRITE - AFTER : ", f"{rewritten_question}")
-    return rewritten_question
-
-def rewrite_using_slots_prod_grade_0109(native_question, detected_slots, synonyms_lookup, canonical_mapping):
-
-    log_info_text("ESSID123 - REWRITE - detected_slot : ", f"{detected_slots}")
-    log_info_text("ESSID123 - REWRITE - BEFORE : ", f"{native_question}")
-
-    rewritten_question = native_question.lower()
-
-    for slot in sorted(filter(None, detected_slots), key=len, reverse=True):
-
-        canonical_value = canonical_mapping.get(slot)
-        log_info_text("ℹ️   ℹ️   ℹ️   ℹ️   ℹ️   ℹ️   ℹ️   ℹ️   slot-canonical : ", f"{slot} - {canonical_value}")
-        if not canonical_value:
-            continue
-
-        entity_type = find_entity_for_slot(slot, synonyms_lookup)
-        if not entity_type:
-            continue
-
-        slot_synonyms = synonyms_lookup.get(entity_type, {}).get(slot, [])
-        slot_terms = list(set(slot_synonyms + [slot]))
-
-        log_info_text("#################### SLOTS are : ", f"{str(slot_terms)}")
-
-        escaped_terms = sorted(
-            [re.escape(str(t)) for t in slot_terms],
             key=len,
             reverse=True
         )
@@ -357,6 +317,11 @@ async def get_context_from_langchain_rag(
                     "nbr_chunks": nbr_chunks,
                 },
             )
+
+            if _is_no_context_response(response):  # NEW
+                log_info_text(action_label, "RAG: no relevant context found")
+                return "NO_CONTEXT_FILENAME", ""
+
             response.raise_for_status()
             data = response.json()
 
@@ -389,6 +354,17 @@ async def get_context_from_langchain_rag(
 
         raise RAGServiceUnavailable("RAG context retrieval failed") from exc
 
+def _is_no_context_response(response: httpx.Response) -> bool:  # NEW
+    """True only for the RAG service's explicit 'nothing relevant found' 404."""
+    if response.status_code != 404:
+        return False
+    try:
+        body = response.json()
+    except ValueError:
+        return False
+    # Checking `detail` avoids hiding a real 404 (wrong URL, wrong route).
+    return isinstance(body, dict) and body.get("detail") == "no_relevant_context"
+
 async def get_filename_context_prompt(action_label, last_last_user_question, last_answer, full_history, maintained_intent):
     full_history = f"""{full_history.strip()}"""
     last_question = full_history.split(":")[0].strip()
@@ -413,6 +389,7 @@ async def get_filename_context_prompt(action_label, last_last_user_question, las
     else:
         log_info_text(action_label, "============================================> SARSA EXTENDED : " + last_question)
         prompt = get_detailed_standard_full_last_conv_bot_mission_with_context(context, last_question, last_last_user_question, last_answer)
+
     return filename, context, prompt
 
 def exist_pronoun(last_second_question, question):

@@ -14,7 +14,7 @@ from rasa_sdk import Action, Tracker
 from rasa_sdk.events import SlotSet
 from rasa_sdk.executor import CollectingDispatcher
 
-from actions.actions import get_payload, classify_results
+from actions.actions import get_payload
 from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.ActionsNome import ActionsNome
 from actions.constants.ActiveIntents import ActiveIntents
@@ -363,10 +363,45 @@ class ActionHandleDeliberationFinalResults(Action):
                     dispatcher.utter_message(bot_response_text)
 
                 await log_chat(user_id, session_id, user_input, bot_response_text, intent, confidence)
-        #else:
-        #    log_info_text(action_label, "##### active_flow 4 = " + str(active_flow))
-        #    send_multiple_messages_forwarded_by_buttons(dispatcher, BOT_MESSAGES.get("affirm_no_result"), FEEDBACK_BUTTONS)
         return get_return_slots_user_fullname_roles(full_name, user_roles)
+
+def classify_results(results):
+    hierarchy = {}
+
+    # first, add the main components (1, 2, 3…)
+    for comp_id, comp_data in results["allCompNotes"].items():
+        comp_name = comp_data["labelAllComp"]
+        hierarchy[comp_name] = {
+            "total": comp_data["noteAllComp"],
+            "bareme": comp_data["baremeAllComp"]
+        }
+
+    # then, add the subnotes dynamically
+    for note_id, note_data in results["notes"].items():
+        for comp_id, comp_data in results["allCompNotes"].items():
+            if note_id.startswith(comp_id) and note_id != comp_id:  # ✅ skip "1", "2", "3"
+                comp_name = comp_data["labelAllComp"]
+                current = hierarchy[comp_name]
+
+                # progressively build tree (e.g. 21211 → 21 → 212 → 2121 → 21211)
+                for i in range(len(comp_id), len(note_id) + 1):
+                    sub_id = note_id[:i]
+                    if sub_id == comp_id:  # ✅ don’t try to fetch "2"
+                        continue
+                    subnote = safe_get_note(results["notes"], sub_id)
+                    if subnote and sub_id not in current:
+                        current[sub_id] = subnote
+                    current = current[sub_id]
+    return hierarchy
+
+def safe_get_note(notes, key):
+    if key not in notes:
+        return None
+    return {
+        "name": notes[key].get("labelSSComp"),
+        "score": notes[key].get("noteSSComp"),
+        "bareme": notes[key].get("baremeSSComp")
+    }
 
 def get_bilan_header(full_name, applied_grade, moyenne_totale, score_totale):
     return [

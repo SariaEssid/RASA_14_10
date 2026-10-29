@@ -7,12 +7,11 @@ actions/answer_from_file/tests/unit/test_answer_from_file_actions.py
 import json
 
 from actions.answer_from_file.answer_from_file_actions import (
-    clean_query,
     JsonCacheManager,
     LLMCache,
-    load_json_cached,
-    extract_last_assistant
+    load_json_cached
 )
+
 
 # =========================================================
 # JsonCacheManager
@@ -59,18 +58,6 @@ def test_load_json_cached_missing_file(monkeypatch, tmp_path):
     result = load_json_cached("cache2", file)
 
     assert result == {}
-
-
-# =========================================================
-# extract_last_assistant
-# =========================================================
-
-def test_extract_last_assistant():
-    text = "A<|assistant|>FINAL ANSWER"
-    result = extract_last_assistant(text)
-
-    assert "FINAL ANSWER" in result
-
 
 # =========================================================
 # load_util_values

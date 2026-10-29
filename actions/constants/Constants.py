@@ -130,7 +130,7 @@ BOT_MESSAGES = {
     "typo_in_qe": "🤔 Désolé, votre question est non claire.\n\n Merci de chequer s'il y a eu des typos !",
     "huge_llm_response_time": "😔 Désolé, le modèle a mis trop de temps à répondre.\n Merci d'essayer plus tard !",
     "model_call_error": "Erreur interne lors de l'appel au modèle",
-    "no_context_found": "Aucun contexte n'est trouvé.",
+    "no_context_found": "Désolé 😬 , \nJe n'ai pas trouvé d'information fiable pour répondre à cette question.",
     "no_sscomp_found": "⛔ Composante non pas existante\nMerci de vérifier s'il y a eu des typos.",
     "only_french": "Désolé, 🙏\nPour le moment, la discussion est disponible uniquement en Français.\nEssayer de vérifier s'il y a eu des typos.\nNote : 🌍 Le mode multilingue est une fonctionnalité que nous prévoyons d'ajouter prochainement.",
     "no_expert_found": "🤔 Désolé, Cette Personne ne figure pas dans la liste actuelle des experts (Évaluateurs ou Jurys).\n Merci de chequer s'il y a eu des typos 🔍 !",

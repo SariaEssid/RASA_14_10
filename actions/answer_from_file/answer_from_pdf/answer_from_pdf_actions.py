@@ -6,7 +6,6 @@ actions/answer_from_file/answer_from_pdf/answer_from_pdf_actions.py
 
 from __future__ import annotations
 
-import re
 import time
 from typing import List, Dict, Text, Any
 
@@ -15,7 +14,8 @@ from rasa_sdk.events import SlotSet
 from rasa_sdk.executor import CollectingDispatcher
 
 from actions.actions import append_friendly_intro_to_answer, get_local_header, get_extracted_slots
-from actions.answer_from_file.answer_from_file_actions import BaseDynamicLLMAction, load_util_values, fusion_and_call_llm, log_params, track_values
+from actions.answer_from_file.answer_from_file_actions import BaseDynamicLLMAction, load_util_values, \
+    fusion_and_call_llm, log_params, track_values
 from actions.answer_from_file.answer_from_markdown.answer_from_markdown_actions import \
     get_native_question_domain_nbr_chunks, \
     get_comp_values_from_synonyms
@@ -23,7 +23,7 @@ from actions.answer_from_file.answer_from_pdf.pdf_rag_pdf import retrieve_contex
 from actions.answer_from_file.bot_missions import get_standard_bot_mission, \
     get_detailed_standard_full_last_conv_bot_mission_with_context
 from actions.answer_from_file.llm_helpers import get_file_path, rewrite_using_slots_prod_grade, get_synonyms_lookup, \
-    verif_hard_qe, skip_duplication, \
+    skip_duplication, \
     track_prompt_decision_params, get_decision_mode
 from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.ActionsNome import ActionsNome
@@ -74,7 +74,6 @@ class ActionPGInfosFromPDF(BaseDynamicLLMAction):
                                                                                          nbr_chunks)
 
             decision_mode = "short"
-            is_hard = re.search(verif_hard_qe(), native_question, flags=re.IGNORECASE)
             if last_second_question:
                 log_info_text(action_label, "INSIDE last_second_question : " + last_second_question)
 
@@ -121,7 +120,7 @@ class ActionPGInfosFromPDF(BaseDynamicLLMAction):
 
                 context = retrieve_context_pdf(question, pdf_path=PDF_PATH, k=4)
 
-                log_params(action_label, domains, is_hard, intent)
+                log_params(action_label, domains, intent)
 
                 prompt = get_standard_bot_mission(question, context)
 
@@ -138,7 +137,6 @@ class ActionPGInfosFromPDF(BaseDynamicLLMAction):
 
             elapsed = round(time.time() - start_time, 2)
 
-            # {get_local_header(elapsed, 'PDF-INFO', {get_name(PDF_PATH)})} {get_prod_header(elapsed)}
             send_multiple_messages_forwarded_by_buttons(dispatcher, f"{get_local_header(elapsed, 'INFO', PDF_PATH)} {append_friendly_intro_to_answer(answer)}", FEEDBACK_BUTTONS)
 
             log_info_text(action_label, f"🔁 🔁 🔁 🔁 🔁  AZERTY END : {last_sscomp_value}")

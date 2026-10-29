@@ -13,14 +13,15 @@ from rasa_sdk import Action, Tracker
 from rasa_sdk.events import FollowupAction
 from rasa_sdk.executor import CollectingDispatcher
 
-from actions.actions import get_payload, get_bilan_final_results, get__decision_mode__last_intent
+from actions.actions import get_payload, get__decision_mode__last_intent
 from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.ActionsNome import ActionsNome
 from actions.constants.ActiveIntents import ActiveIntents
 from actions.constants.Constants import BOT_MESSAGES
 from actions.constants.FlowType import FlowType, SSCOMP_TO_FLOW
 from actions.grade_passage_results.data_classes import ActionContext, DynamicToChainContext
-from actions.grade_passage_results.helpers import get_auth_binding_json, process_final_results_response
+from actions.grade_passage_results.helpers import get_auth_binding_json, process_final_results_response, \
+    get_bilan_final_results
 from actions.logging.logger import log_chat
 from actions.logging.logging_helpers import get_util_values_with_log, log_info_text, log_exception_text
 from actions.semantic.semantic_actions import flatten_events

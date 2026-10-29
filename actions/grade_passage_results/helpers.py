@@ -12,7 +12,6 @@ from aiocircuitbreaker import CircuitBreakerError
 from rasa_sdk import Tracker
 from rasa_sdk.executor import CollectingDispatcher
 
-from actions.actions import get_bilan_final_results
 from actions.constants.Constants import BOT_MESSAGES
 from actions.constants.FlowType import FlowType
 from actions.logging.logger import log_chat
@@ -37,6 +36,11 @@ def get_candidate_details(tracker):
     log_info_text("id_candidat : ", tracker.get_slot('id_candidat'))
     log_info_text("full_name : ", tracker.get_slot('full_name'))
     return tracker.get_slot("id_candidat"), tracker.get_slot('full_name')
+
+def get_bilan_final_results(dispatcher):
+    msg_prediction = ("💡Si vous voulez, je peux vous fournir le résultat final complet.\n"
+                      "Juste tapez : **Oui**, et je vous pésenterai un bilan détaillé de vos notes.🚀")
+    send_message_forwarded_by_buttons(dispatcher, msg_prediction)
 
 async def _get_congrat_results(dispatcher, action_label, answer, answer_status):
     """

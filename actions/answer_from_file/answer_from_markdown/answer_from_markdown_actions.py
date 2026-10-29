@@ -39,7 +39,7 @@ from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.ActionsNome import ActionsNome
 from actions.constants.ActiveIntents import ActiveIntents
 from actions.constants.Constants import FEEDBACK_BUTTONS, DIRECT_HAND_LONG, GO_DETAILS, GO_SHORT, \
-    DIRECT_HAND_FLAG
+    DIRECT_HAND_FLAG, BOT_MESSAGES
 from actions.constants.EntitiesMapping import COMPOSANTE_CANONICAL, EXPERTS_LABELS, ALL_ENTITIES_MAPPINGS
 from actions.logging.logger import log_chat
 from actions.logging.logging_helpers import log_info_text, get_last_conversation
@@ -98,6 +98,12 @@ class ActionEvaluatorsAndPJ(BaseDynamicLLMAction):
             elif intent == ActiveIntents.ASK_EVAL_VS_PJ.value:
                 filename, context = await get_context_from_langchain_rag(action_label, question, ["evalsjurys"], [],
                                                                          nbr_chunks)
+                if not context:
+                    dispatcher.utter_message(
+                        BOT_MESSAGES.get("no_context_found")
+                    )
+                    return []
+
                 prompt = get_extended_bot_mission(question, context)
                 tag = "VS"
                 log_info_text(action_label, tag)

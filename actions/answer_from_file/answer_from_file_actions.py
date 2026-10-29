@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import re
 import time
 from pathlib import Path
 from threading import Lock
@@ -24,14 +23,15 @@ from openai.types.chat import (
     ChatCompletionUserMessageParam)
 from rasa_sdk import Action
 
-from actions.actions import exception_fallback_err, exception_llm_err, exception_llm_err_dsi, get_payload
+from actions.actions import get_payload
 from actions.answer_from_file.bot_missions import fusion_question
 from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.Constants import BOT_MESSAGES, DIRECT_HAND_FLAG, DIRECT_HAND_LONG, GO_DETAILS
 from actions.logging.logging_helpers import log_info_text, log_error_text, get_util_minimal_values_with_log, \
     log_exception_text, get_last_conversation
 from actions.settings.settings import settings
-from actions.utils.exception_error_messages import exception_fallback_err_dsi
+from actions.utils.exception_error_messages import exception_fallback_err_dsi, exception_llm_err, exception_llm_err_dsi, \
+    exception_fallback_err
 from actions.utils.message_helpers import send_random_message_user_and_dsi
 from actions.utils.slots_helpers import get_conversational_slots
 
@@ -296,77 +296,6 @@ def clean_query(text):
     for w in STOP_WORDS:
         text = text.replace(w, "")
     return text.strip()
-
-
-stop_all = [
-                "</s>",
-                "[/INST]",
-                "Question:",
-                "Question :",
-                "\nQuestion",
-                "Réponse:",
-                "Réponse :",
-                "\nRéponse",
-                "ranking_list",
-                "Example:",
-                "Exemple:",
-                "Written",
-                "---",
-                "Instruction ",
-                "Instruction",
-                "**Instruction",
-                "(Note",
-                "Note",
-                "Question",
-                "Tu es un assistant",
-                "answer",
-                "CONTEXTE",
-                "Dernière Discussion",
-                "Cordialement",
-                "ranking",
-                "Analyse la",
-                "RÈGLES STRICTES DE RÉPONSE",
-                "<|user|>"
-                "?",
-                "<|assistant|>" # interrupt response : extraire les capsules pédagogiques
-]
-
-stop_roles = [
-                "</s>",
-                "[/INST]",
-                "Question:",
-                "Question :",
-                "\nQuestion",
-                "Réponse:",
-                "Réponse :",
-                "\nRéponse",
-                "ranking_list",
-                "Example:",
-                "Exemple:",
-                "Written",
-                "---",
-                "Instruction ",
-                "Instruction",
-                "**Instruction",
-                "(Note",
-                "Note",
-                "Question",
-                "Tu es un assistant",
-                "answer",
-                "CONTEXTE",
-                "Dernière Discussion",
-                "Cordialement",
-                "ranking",
-                "Analyse la",
-                "RÈGLES STRICTES DE RÉPONSE",
-                "?",
-                "<|user|>"
-                # "<|assistant|>" # interrupt response : extraire les capsules pédagogiques
-]
-
-def extract_last_assistant(answer: str) -> str:
-    parts = re.split(r"<|assistant|>", answer)
-    return parts[-1].strip() if parts else answer.strip()
 
 agent_mission = """
 <|system|>

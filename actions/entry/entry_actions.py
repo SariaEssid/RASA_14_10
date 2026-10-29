@@ -15,7 +15,7 @@ from rasa_sdk.events import SlotSet
 from rasa_sdk.executor import CollectingDispatcher
 
 from actions.actions import get_payload, get_semantic_random_reply, generate_composante_buttons, \
-    get__decision_mode__last_intent, get_local_header, append_friendly_intro_to_answer
+    get__decision_mode__last_intent, append_friendly_intro_to_answer
 from actions.answer_from_file.answer_from_file_actions import BaseDynamicLLMAction
 from actions.answer_from_file.bot_missions import get_fallback_bot_mission_with_context
 from actions.constants.ActionsLabel import ActionsLabel
@@ -135,7 +135,7 @@ class ActionGetDynamicResponse(BaseDynamicLLMAction):
 
                 elapsed = round(time.time() - start_time, 2)
                 # {get_local_header(elapsed, 'SECTION-ADV', PDF_PATH)} - {get_local_header(elapsed, 'EVAL-PJ', 'PATH_HIERARCY_EVALS_JURYS_MRKDN')}
-                send_multiple_messages_forwarded_by_buttons(dispatcher,f"{get_local_header(elapsed, 'ENTRY', 'LLM')} {append_friendly_intro_to_answer(answer)}", FEEDBACK_BUTTONS)
+                send_multiple_messages_forwarded_by_buttons(dispatcher,f"ENTRY - LLM {append_friendly_intro_to_answer(answer)}", FEEDBACK_BUTTONS)
 
                 await log_chat(user_id, session_id, question, answer, intent, confidence)
 

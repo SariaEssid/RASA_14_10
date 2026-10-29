@@ -6,7 +6,7 @@ tests/unit/test_answer_from_markdown_actions.py
 from typing import Any
 from unittest.mock import AsyncMock, Mock
 
-import pytest
+import httpx, pytest, respx
 
 from actions.answer_from_file.answer_from_markdown.answer_from_markdown_actions import (
     format_values,
@@ -15,6 +15,7 @@ from actions.answer_from_file.answer_from_markdown.answer_from_markdown_actions 
     get_native_question_domain_nbr_chunks, search_expert_all_roles, get_infos_by_expert_name,
     get_comp_values_from_synonyms
 )
+from actions.answer_from_file.llm_helpers import get_context_from_langchain_rag, RAGServiceUnavailable
 from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.ActiveIntents import ActiveIntents
 
@@ -322,6 +323,36 @@ async def test_academic_short_and_detailed(monkeypatch):
 
     result = await action.run(Mock(), tracker, [])
     assert result is not None
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_no_relevant_context_is_not_an_error(monkeypatch):
+    notify = pytest.importorskip("unittest.mock").AsyncMock()
+    monkeypatch.setattr(
+        "actions.answer_from_file.llm_helpers.notify_team_leader_by_technical_problem", notify
+    )
+    respx.post(url__regex=r".*/rag/context").mock(
+        return_value=httpx.Response(404, json={"detail": "no_relevant_context"})
+    )
+
+    filename, context = await get_context_from_langchain_rag("t", "q", [], [], 2)
+
+    assert (filename, context) == ("NO_CONTEXT_FILENAME", "")
+    notify.assert_not_called()
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_other_404_is_still_an_error(monkeypatch):
+    monkeypatch.setattr(
+        "actions.answer_from_file.llm_helpers.notify_team_leader_by_technical_problem",
+        pytest.importorskip("unittest.mock").AsyncMock(),
+    )
+    respx.post(url__regex=r".*/rag/context").mock(
+        return_value=httpx.Response(404, json={"detail": "Not Found"})
+    )
+    with pytest.raises(RAGServiceUnavailable):
+        await get_context_from_langchain_rag("t", "q", [], [], 2)
 
 # =========================
 # FAKE TRACKER
