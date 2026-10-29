@@ -9,33 +9,32 @@ import logging
 from typing import Text, Dict, Any, List
 from typing import TypeVar
 
-import httpx
 from aiocircuitbreaker import CircuitBreakerError
 from rasa_sdk import Action, Tracker
-from rasa_sdk.events import SlotSet, FollowupAction
+from rasa_sdk.events import SlotSet
 from rasa_sdk.executor import CollectingDispatcher
 
-from actions.actions import get_payload, get_bilan_final_results, classify_results, get__decision_mode__last_intent
+from actions.actions import get_payload, classify_results
 from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.ActionsNome import ActionsNome
 from actions.constants.ActiveIntents import ActiveIntents
 from actions.constants.Constants import BOT_MESSAGES, FEEDBACK_BUTTONS
-from actions.constants.FlowType import FlowType, SSCOMP_TO_FLOW
+from actions.constants.FlowType import FlowType
+from actions.grade_passage_results.data_classes import FlowCheckContext, GetResponseContext
+from actions.grade_passage_results.helpers import get_candidate_details, get_candidate_id, _get_congrat_results, \
+    get_auth_binding_json
 from actions.logging.logger import log_chat
-from actions.logging.logging_helpers import get_util_values_with_log, resolve_active_flow, log_response_payload, \
-    log_info_text, log_info_expected_flow, log_exception_text
+from actions.logging.logging_helpers import get_util_values_with_log, log_info_text, log_exception_text
 from actions.settings.settings import settings
 from actions.utils.error_handling import handle_action_errors
 from actions.utils.interfaces import IResultsService
 from actions.utils.message_helpers import original_alert_affirm_without_discussion, \
-    original_alert_follow_my_proposition, \
     send_multiple_messages_forwarded_by_buttons, send_fallback_problem_to_dsi_forwarded_by_buttons, \
     alert_technical_problem_exception, original_alert_unexpected_response, send_message_forwarded_by_buttons
 from actions.utils.slots_helpers import empty_slots, \
     get_return_slots_candidat_id_fullname, \
-    get_return_slots_user_fullname_roles, get_conversational_slots, get_return_slots_for_conversations, \
-    get_return_slots_qa_intent_flow_results, get_return_slots_authentication
-from actions.semantic.semantic_actions import flatten_events
+    get_return_slots_user_fullname_roles, get_return_slots_for_conversations, \
+    get_return_slots_qa_intent_flow_results
 
 log = logging.getLogger("rasa-actions")
 ServiceType = TypeVar('ServiceType', bound='IResultsService')
@@ -47,14 +46,9 @@ class ActionFetchFinalUnitResults(Action):
 
     def __init__(self, unit_results_service: IResultsService):
         self.unit_results_service = unit_results_service
-        self._expected_flow = "none"
 
     def name(self) -> Text:
         return ActionsNome.ACTION_DYNAMIC_FINAL_UNIT_RESULTS.value
-
-    def expected_flow(self) -> Text:
-        """Return the expected flow - uses instance variable set during run()"""
-        return self._expected_flow
 
     @handle_action_errors
     async def run(
@@ -63,47 +57,16 @@ class ActionFetchFinalUnitResults(Action):
             tracker: Tracker,
             domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
 
-        # First resolve and store the current flow
-
-        self._expected_flow = resolve_active_flow(tracker)
-
         action_label = ActionsLabel.PY_UNIT_RESULTE.value
         full_name, user_roles, user_id, session_id, user_input, question, answer, confidence, active_flow, intent = get_util_values_with_log(
             tracker, action_label)
-        last_second_question = get_conversational_slots(tracker)
-        log_info_expected_flow(action_label, self.expected_flow)
-        self._expected_flow = active_flow
 
         bound = await get_auth_binding_json(tracker, self.unit_results_service, user_id)
         if not bound:
             dispatcher.utter_message(text=BOT_MESSAGES.get("login_required"),
                                      json_message={"type": "auth_required"})
             return get_return_slots_candidat_id_fullname(None, None)
-        else :
-
-            answer_dto = await process_final_results_response(
-                self.unit_results_service,
-                active_flow,
-                user_id,
-                dispatcher,
-                tracker,
-                confidence,
-                get_payload(user_id, session_id, user_input, intent, confidence),
-                action_label
-            )
-
-            if answer_dto:
-                response_dto = await _format_results_message(action_label, answer_dto, active_flow, dispatcher, json.dumps(answer_dto))
-                await log_chat(user_id,session_id,user_input,response_dto,intent,confidence)
-
-            slots_to_set = {
-                "last_last_question": last_second_question,
-                "sscomp": tracker.get_slot("sscomp"),
-                "last_question": question,
-                "last_answer": answer
-            }
-
-            return get_return_slots_candidat_id_fullname(user_id, full_name) + get_return_slots_for_conversations(slots_to_set)
+        return []
 
 class ActionCongratFinalResults(Action):
 
@@ -124,13 +87,17 @@ class ActionCongratFinalResults(Action):
         action_label = ActionsLabel.PY_CONGRATS_RESULTS.value
         full_name, user_roles, user_id, session_id, user_input, question, answer, confidence, active_flow, intent = get_util_values_with_log(tracker, action_label)
 
+        if tracker.latest_action_name == self.name():
+            log_info_text(action_label, f"{BOT_MESSAGES.get('skip_duplication')} - {action_label}")
+            return []
+
         await get_auth_binding_json(tracker, self.congrat_service, user_id)
 
         id_candidat = get_candidate_id(tracker)
 
         if id_candidat:
             try:
-                log_info_text("LOLO-1 id_candidat : ", id_candidat)
+                log_info_text("PIKATCHU 1 : ", id_candidat + " - " + active_flow)
 
                 answer = await self.congrat_service.congrat_final_results_by_id_candidat(id_candidat, rasa_to_spring_token)
                 answer_status = answer.status_code
@@ -148,187 +115,12 @@ class ActionCongratFinalResults(Action):
         return get_return_slots_candidat_id_fullname(id_candidat, full_name) + get_return_slots_for_conversations({ "active_flow": FlowType.ALL_BILAN.value })
 
 ################################ FREE METHODS ################################
-def from_dynamic_to_chain(tracker, user_input, answer, intent, active_flow, last_second_question, maintained_intent, decision_mode):
-    events = get_return_slots_qa_intent_flow_results(user_input, answer, tracker.get_slot("sscomp"), intent, active_flow, last_second_question, maintained_intent, decision_mode)
-
-    events.append(FollowupAction("action_lang_chain_routing"))
-    events = flatten_events(events)
-
-    log_info_text("LOLO-2 : ", active_flow)
-    return events
 
 def get_dynamic_events(tracker, user_input, answer, intent, active_flow, last_second_question, maintained_intent, decision_mode):
     events = get_return_slots_qa_intent_flow_results(user_input, answer, tracker.get_slot("sscomp"), intent, active_flow, last_second_question, maintained_intent, decision_mode)
 
     log_info_text("LOLO-2 : ", active_flow)
     return events
-
-class ActionDynamicFaq(Action):
-
-    def __init__(self, dynamic_service: IResultsService):
-        self.dynamic_service = dynamic_service
-
-    def name(self) -> Text:
-        return ActionsNome.ACTION_DYNAMIC_FAQ.value
-
-    @handle_action_errors
-    async def run(self, dispatcher: CollectingDispatcher,
-                  tracker: Tracker,
-                  domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-
-        action_label = ActionsLabel.PY_DYNAMIC_FAQ.value
-        full_name, user_roles, user_id, session_id, user_input, question, answer, confidence, active_flow_off, intent = get_util_values_with_log(tracker, action_label)
-
-        check_is_binded = await get_auth_binding_json(tracker, self.dynamic_service, user_id)
-
-        maintained_intent = intent
-        decision_mode, last_intent = get__decision_mode__last_intent(action_label, tracker)
-        last_second_question = get_conversational_slots(tracker)
-
-        my_entity = "none"
-        my_value = "none"
-        active_flow = "none"
-
-        active_flow_from_semantic = tracker.get_slot("active_flow")
-
-        if intent == ActiveIntents.ASK_RESULTAT_DISSERTATION.value:
-            language = tracker.get_slot("language")  # Get 'fr' or 'en'
-            if language == "fr":
-                active_flow = FlowType.NOTE_DISS_FR.value
-            elif language == "en":
-                active_flow = FlowType.NOTE_DISS_EN.value
-        elif intent == ActiveIntents.ASK_RESULTAT_CAPSULE.value:
-            language = tracker.get_slot("language")  # Get 'fr' or 'en'
-            if language == "fr":
-                active_flow = FlowType.NOTE_CAPS_FR.value
-            elif language == "en":
-                active_flow = FlowType.NOTE_CAPS_EN.value
-        elif intent == ActiveIntents.ASK_RESULTAT_SSCOMP.value:
-            entities = tracker.latest_message.get("entities", [])
-            log_info_text(action_label, entities)
-            for entity in entities:
-                if entity.get("entity") == "sscomp" and entity.get("extractor") == "DIETClassifier":
-                    my_entity = entity['entity']
-                    my_value = entity['value']
-                    log.info(f"ℹ️  Entity: {entity['entity']}, Value: {entity['value']}")
-                    if my_entity == "sscomp":
-                        active_flow = SSCOMP_TO_FLOW.get(my_value)
-                        if active_flow:
-                            break
-            log.info(f"ℹ️ ........................... Entity: {my_entity}, Value: {my_value}, FLOW: {active_flow}")
-        elif intent == ActiveIntents.ASK_RESULTAT_FINAL.value:
-            active_flow = FlowType.CONGRATS.value
-        elif intent == ActiveIntents.ASK_STATUS_DELIBERATION_RESULTAT.value:
-            active_flow = FlowType.DELIBERATION.value
-        elif intent == ActiveIntents.ASK_ABOUT_CANDIDATURE_PASSAGE_GRADE.value:
-            active_flow = FlowType.GUIDE_COMP.value
-        elif intent == ActiveIntents.ASK_CRITERES_EVALUATIONS_SSCOMP.value:
-            active_flow = FlowType.EVALUATION_GRID.value
-        elif intent in ActiveIntents.ALL_ENTRY_INTENTS:
-            active_flow = FlowType.DUMMY_FLOW.value
-        elif intent == ActiveIntents.ASK_DENY.value:
-            active_flow = "None"
-        elif str(intent) == str(ActiveIntents.NLU_FALLBACK.value):
-            active_flow = active_flow_from_semantic
-
-        if active_flow:
-            log_info_text("LOLO-00 : ", intent + " - " + active_flow)
-
-        log.info(f"🚩  Final Values : {my_entity}, Value: {my_value}, intent: {intent}, FLOW: {active_flow}, ORIGINAL-FLOW: {active_flow_off}, id_candidat: {tracker.get_slot('id_candidat')}")
-        answer = None
-
-        if tracker.latest_action_name == self.name() or (intent == ActiveIntents.NLU_FALLBACK.value and last_intent in ActiveIntents.ALL_LLM_INTENTS_LANG_CHAIN):
-            log_info_text(action_label, f"{BOT_MESSAGES.get('skip_duplication')} - {action_label}")
-            return []
-
-        if intent in ActiveIntents.FINAL_RESULTS_INTENTS and (active_flow == "none" or active_flow is None):
-            message_comp_not_found = BOT_MESSAGES.get('no_composante')
-            log.info(f"📍  📍  📍  active_flow=NONE : {active_flow}")
-            send_message_forwarded_by_buttons(dispatcher, message_comp_not_found)
-
-        else:
-            if not check_is_binded:
-                log.info("📍  📍  📍  📍  📍  📍  📍  📍  FIRST : - AUTHENTICATION")
-                if active_flow == FlowType.DUMMY_FLOW.value:
-                    answer = tracker.get_slot("last_answer")
-                    log_info_text(action_label, BOT_MESSAGES.get('skip_unrelated_action'))
-                    log_info_text("LOLO-1 : ", str(active_flow))
-                    return from_dynamic_to_chain(tracker, user_input, answer, intent, active_flow, last_second_question,
-                                                 maintained_intent, decision_mode)
-                else:
-                    first_answer = await get_message(self, action_label, active_flow, intent)
-                    answer = first_answer.replace("\\n", "\n")
-                send_message_forwarded_by_buttons(dispatcher, answer)
-            else:
-                note_sscomp = "note_"
-                log.info("📍  📍  📍  📍  📍  📍  📍  📍  SECOND : + AUTHENTICATION")
-
-                if active_flow == FlowType.DUMMY_FLOW.value:
-                    log_info_text(action_label, BOT_MESSAGES.get('skip_unrelated_action'))
-                    return from_dynamic_to_chain(tracker, user_input, answer, intent, active_flow, last_second_question,
-                                                 maintained_intent, decision_mode)
-
-                if active_flow and note_sscomp in active_flow:
-                    log.info(f"📍  📍  active_flow=sscomp : {active_flow} - {tracker.get_slot('id_candidat')}")
-
-                    answer_dto = await process_final_results_response(
-                        self.dynamic_service,
-                        active_flow,
-                        tracker.get_slot("id_candidat"),
-                        dispatcher,
-                        tracker,
-                        confidence,
-                        get_payload(user_id, session_id, user_input, intent, confidence),
-                        action_label
-                    )
-
-                    if answer_dto:
-                        response_dto = await _format_results_message(action_label, answer_dto, active_flow, dispatcher,
-                                                                     json.dumps(answer_dto))
-                        await log_chat(
-                            tracker.sender_id,
-                            session_id,
-                            tracker.latest_message.get("text"),
-                            response_dto,
-                            tracker.get_intent_of_latest_message(),
-                            confidence
-                        )
-
-                elif active_flow == FlowType.CONGRATS.value:
-                    log.info(f"📍  📍  active_flow=final : {active_flow} - {tracker.get_slot('id_candidat')}")
-                    try:
-                        id_candidat = get_candidate_id(tracker)
-                        log_info_text("LOLO-2 id_candidat : ", id_candidat)
-                        log_info_text("LOLO-2 check_is_binded : ", check_is_binded)
-
-                        answerp = await self.dynamic_service.congrat_final_results_by_id_candidat(id_candidat, rasa_to_spring_token)
-                        answer_status = answerp.status_code
-                        await _get_congrat_results(dispatcher, action_label, answerp, answer_status)
-
-                    except CircuitBreakerError as e:
-                        # ✅ ADD: Handle circuit breaker specifically
-                        alert_technical_problem_exception(action_label, e)
-                        dispatcher.utter_message(BOT_MESSAGES.get('circuit_opened_alert'))
-
-                    except Exception as e:
-                        await get_message(self, action_label, active_flow, intent)
-                        await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label,
-                                                                                get_payload(user_id, session_id,
-                                                                                            user_input, intent,
-                                                                                            confidence), e)
-                else:
-                    answer = await get_message(self, action_label, active_flow, intent)
-                    send_message_forwarded_by_buttons(dispatcher, answer)
-
-                return get_return_slots_authentication(user_roles, tracker.get_slot('id_candidat'), full_name)
-
-            if decision_mode == 'detailed' and intent == ActiveIntents.NLU_FALLBACK.value:
-                maintained_intent = last_intent
-
-        await log_chat(user_id, session_id, user_input, answer, intent, confidence)
-
-        return get_return_slots_qa_intent_flow_results(user_input, answer, tracker.get_slot("sscomp"), intent, active_flow, last_second_question, maintained_intent, decision_mode)
-
 
 class ActionHandleDynamicFinalGlobalResults(Action):
     VALID_FLOWS = {f.value for f in FlowType}
@@ -355,45 +147,46 @@ class ActionHandleDynamicFinalGlobalResults(Action):
         else:
             try:
                 # 1. Slots
-                await get_auth_binding_json(tracker, self.results_service, user_id) # jdida
+                bound = await get_auth_binding_json(tracker, self.results_service, user_id) # jdida
+
+                if not bound:
+                    dispatcher.utter_message(
+                        text=BOT_MESSAGES.get("login_required"),
+                        json_message={"type": "auth_required"},
+                    )
+                    return get_return_slots_candidat_id_fullname(None, None)
+
                 id_candidat = get_candidate_id(tracker)  # NEXT add id_candidat to get_util_values_with_log
-
                 last_intent = tracker.get_slot("last_intent")
-                if last_intent:
-                    log_info_text(action_label, "##### last_intent = " + last_intent)
-                if last_intent and last_intent not in ActiveIntents.NO_AFFIRM_INTENTS:
-                    if (
-                            (active_flow == "none" or tracker.get_slot('active_flow') == "None")
-                            and
-                            (intent == "affirm" or tracker.get_intent_of_latest_message() == "affirm")
-                    ):
-                        bot_response_text = original_alert_affirm_without_discussion()
-                        send_multiple_messages_forwarded_by_buttons(dispatcher, bot_response_text,
-                                                                    FEEDBACK_BUTTONS)  # 30-01-2026
 
-                        log_info_text(action_label,
-                                      '##### AZERTY : ' + last_intent + '---' + intent + '---' + active_flow)
-                        await log_chat(
-                            user_id,
-                            session_id,
-                            user_input,
-                            bot_response_text,
-                            tracker.get_intent_of_latest_message(),
-                            confidence
-                        )
-                        return empty_slots()
-                # else:
-                    # send_multiple_messages_forwarded_by_buttons(dispatcher, BOT_MESSAGES.get("affirm_no_result"), FEEDBACK_BUTTONS)
+                context = FlowCheckContext(
+                    dispatcher=dispatcher,
+                    tracker=tracker,
+                    action_label=action_label,
+                    last_intent=last_intent,
+                    intent=intent,
+                    active_flow=active_flow,
+                    user_id=user_id,
+                    session_id=session_id,
+                    user_input=user_input,
+                    confidence=confidence,
+                )
+
+                slots = await self._process_verif_flow(context)
+                if slots is not None:
+                    return slots
 
                 # 3. Handle flow
-                if last_intent and last_intent in ActiveIntents.NO_AFFIRM_INTENTS:
-                    if active_flow in FlowType._value2member_map_:
-                        bot_response_text = await self._process_results(dispatcher, action_label, tracker, payload_tech_error)
-                    else:
-                        bot_response_text = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, f'Flux Inexistant : {active_flow}')
-                else:
-                    bot_response_text = BOT_MESSAGES.get('affirm_no_result')
-                    send_multiple_messages_forwarded_by_buttons(dispatcher, bot_response_text, FEEDBACK_BUTTONS)
+                context = GetResponseContext(
+                    dispatcher=dispatcher,
+                    tracker=tracker,
+                    action_label=action_label,
+                    last_intent=last_intent,
+                    active_flow=active_flow,
+                    payload_tech_error=payload_tech_error
+                )
+
+                bot_response_text = await self._get_bot_response_text(context)
 
             except Exception as e:
                 bot_response_text = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label,
@@ -443,6 +236,57 @@ class ActionHandleDynamicFinalGlobalResults(Action):
             full_answer = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, e)
 
         return full_answer
+
+    async def _get_bot_response_text(self, context: GetResponseContext):
+
+        dispatcher = context.dispatcher
+        tracker = context.tracker
+        last_intent = context.last_intent
+        active_flow = context.active_flow
+        payload_tech_error = context.payload_tech_error
+        action_label = context.action_label
+
+        if last_intent and last_intent in ActiveIntents.NO_AFFIRM_INTENTS:
+            if active_flow in FlowType._value2member_map_:
+                bot_response_text = await self._process_results(dispatcher, action_label, tracker, payload_tech_error)
+            else:
+                bot_response_text = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label,
+                                                                                            payload_tech_error,
+                                                                                            f'Flux Inexistant : {active_flow}')
+        else:
+            bot_response_text = BOT_MESSAGES.get('affirm_no_result')
+            send_multiple_messages_forwarded_by_buttons(dispatcher, bot_response_text, FEEDBACK_BUTTONS)
+        return bot_response_text
+
+    @staticmethod
+    async def _process_verif_flow(context: FlowCheckContext):
+
+        tracker = context.tracker
+        last_intent = context.last_intent
+        active_flow = context.active_flow
+        intent = context.intent
+
+        if last_intent and last_intent not in ActiveIntents.NO_AFFIRM_INTENTS:
+            if (
+                    (active_flow == "none" or tracker.get_slot('active_flow') == "None")
+                    and
+                    (intent == "affirm" or tracker.get_intent_of_latest_message() == "affirm")
+            ):
+                bot_response_text = original_alert_affirm_without_discussion()
+                send_multiple_messages_forwarded_by_buttons(context.dispatcher, bot_response_text,
+                                                            FEEDBACK_BUTTONS)  # 30-01-2026
+
+                log_info_text(context.action_label, '##### AZERTY : ' + last_intent + '---' + str(intent) + '---' + str(active_flow))
+                await log_chat(
+                    context.user_id,
+                    context.session_id,
+                    context.user_input,
+                    bot_response_text,
+                    tracker.get_intent_of_latest_message(),
+                    context.confidence
+                )
+                return empty_slots()
+        return None
 
     def _add_component_details(self, action_label, message, component_data, level):
         comp_level = None
@@ -494,7 +338,7 @@ class ActionHandleDeliberationFinalResults(Action):
                         send_multiple_messages_forwarded_by_buttons(dispatcher, bot_response_text, FEEDBACK_BUTTONS)
                     else:
                         try:
-
+                            log_info_text("PIKATCHU 2 : ", id_candidat + " - " + active_flow)
                             answer = await self.deliberation_service.congrat_final_results_by_id_candidat(id_candidat, rasa_to_spring_token)
                             answer_status = answer.status_code
                             bot_response_text = await _get_congrat_results(dispatcher, action_label, answer, answer_status)
@@ -524,269 +368,12 @@ class ActionHandleDeliberationFinalResults(Action):
         #    send_multiple_messages_forwarded_by_buttons(dispatcher, BOT_MESSAGES.get("affirm_no_result"), FEEDBACK_BUTTONS)
         return get_return_slots_user_fullname_roles(full_name, user_roles)
 
-################################ COMMON METHODS ################################
 def get_bilan_header(full_name, applied_grade, moyenne_totale, score_totale):
     return [
         "📊 **Bilan Global**",
-        f"👤 {full_name or 'N/A'}",
+        f"👤 **Candidat(e)** : {full_name or 'N/A'}",
         f"🏆 **Grade Postulé** : {applied_grade}",
         f"💯 **Score Total : {moyenne_totale} / {score_totale}**",
         ""
     ]
 
-async def get_message(self, action_label, active_flow, intent):
-    log.info(f"📍  📍  active_flow=X : {active_flow}")
-    try:
-        #if active_flow is None or active_flow == "none":
-            #return empty_slots()ss
-        answer = await self.dynamic_service.get_faq_by_label_intent(intent)
-        log_info_text(action_label, answer[:50])
-    except Exception as e:
-        answer = BOT_MESSAGES.get('no_response')
-        log_exception_text(action_label, e)
-
-    return answer
-
-async def process_final_results_response(
-        service: IResultsService,
-        active_flow: str,
-        user_id: int,
-        dispatcher: CollectingDispatcher,
-        tracker: Tracker,
-        confidence: float,
-        payload_tech_error: dict,
-        action_label: str
-) -> Any:
-    """Call backend for final results and handle all response cases."""
-    try:
-
-        log_info_text(action_label, f"user_id : {user_id}")
-        id_candidat = get_candidate_id(tracker)
-
-        response = ""
-        if id_candidat:
-            answer = await service.find_final_results_for_bot_by_intent_and_candidat_id(
-                active_flow,
-                id_candidat,
-                rasa_to_spring_token,
-            )
-
-            answer_status = answer.status_code
-            log_info_text(action_label, f"answer_status : {answer_status} - {active_flow}")
-
-            if answer_status == 403:
-                response = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, answer.text)
-
-            elif answer_status == 404:
-                response = answer.text
-                dispatcher.utter_message(response)
-
-            elif answer_status == 200:
-                response = answer.text
-                dto = json.loads(response) if isinstance(response, str) else response
-                log_info_text(action_label, f"ℹ️  A dto : {dto}")
-                log_info_text(action_label, f"ℹ️  B dto-ssComp : {dto.get('notes')}")
-                log_info_text(action_label, f"ℹ️  C dto-allComp : {dto.get('allCompNotes')}")
-                return dto
-
-            elif answer_status == 500:
-                error_data = answer.json()
-                error_text = f"Server error: {error_data.get('error', 'Erreur inconnue')}"
-                response = alert_technical_problem_exception(action_label, error_text)
-
-                if active_flow == FlowType.DELIBERATION.value:
-                    msg = original_alert_follow_my_proposition()
-                else:
-                    msg = original_alert_unexpected_response()
-                dispatcher.utter_message(msg)
-
-            else:
-                error_data = answer.json()
-                error_text = f"Server error: {error_data.get('error', 'Erreur inconnue')}"
-                response = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, error_text)
-
-    except CircuitBreakerError as e:
-        # ✅ ADD: Handle circuit breaker specifically
-        response = alert_technical_problem_exception(action_label, e)
-        dispatcher.utter_message(BOT_MESSAGES.get('circuit_opened_alert'))
-
-    except Exception as e:
-        response = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, e)
-
-    # log user interaction
-    await log_chat(
-        tracker.sender_id,
-        tracker.get_slot("session_id"),
-        tracker.latest_message.get("text"),
-        response,
-        tracker.get_intent_of_latest_message(),
-        confidence,
-    )
-
-    return None
-
-async def _format_results_message(action_label, dto, active_flow, dispatcher, response):
-    """Centralized method to format results for the user."""
-    msg_prefix = None
-    msg_details = None
-    is_empty_case = False
-    all_comp = '_comp'
-    se_comp_all = 'seq_ens'
-    se_sscomp = 'se'
-    ptp_comp_all = 'plat_tp'
-    ptp_sscomp = 'ptp'
-    empty_marks_dto = (not dto['notes']) and (not dto['allCompNotes'])
-    space = '\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0'
-
-    log_info_text(action_label, f"all_comp - active_flow : {all_comp} - {active_flow}")
-    if not dto['notes'] and not dto.get('allCompNotes'):
-        if (se_comp_all in active_flow) or (se_sscomp in active_flow):
-            msg_prefix = BOT_MESSAGES.get('missed_deposit') + '**Séquence Enseignement** .\n'
-            if empty_marks_dto:
-                is_empty_case = True
-
-        elif (ptp_comp_all in active_flow) or (ptp_sscomp in active_flow):
-            msg_prefix = BOT_MESSAGES.get('missed_deposit') + '**Plateforme de TP** .\n'
-            if empty_marks_dto:
-                is_empty_case = True
-        if is_empty_case:
-            msg_details = msg_prefix
-            dispatcher.utter_message(text=msg_details)
-            get_bilan_final_results(dispatcher)
-        else:
-            msg_prediction = BOT_MESSAGES.get('result_not_found')
-            send_message_forwarded_by_buttons(dispatcher, msg_prediction)
-
-    elif dto['notes'] or ((all_comp in active_flow) and dto.get('allCompNotes')):
-        log_info_text(action_label, "CASE 2 : NULL or NULL")
-        if (all_comp in active_flow) and dto.get('allCompNotes'):
-            log_info_text(action_label, f"GOT IT Composante* : {dto['allCompNotes']}")
-            msg_details = BOT_MESSAGES.get('all_comp_mark')
-
-            for k, v in dto['allCompNotes'].items():
-                label = str(v['labelAllComp']).strip()
-                note = str(v['noteAllComp']).strip()
-                msg_details += f"{space}• {label} : {note}\n"
-        else:
-            log_info_text(action_label, "GOT IT SSComposante")
-            msg_details = BOT_MESSAGES.get('sscomp_comp_mark')
-            for k, v in dto['notes'].items():
-                label = str(v['labelSSComp']).strip()
-                note = str(v['noteSSComp']).strip()
-                msg_details += f"{space}• {label} : {note}\n"
-        dispatcher.utter_message(text=msg_details)
-        log_info_text(action_label, f"YES : {response[:50]}")
-        get_bilan_final_results(dispatcher)
-
-    return msg_details
-
-async def _get_congrat_results(dispatcher, action_label, answer, answer_status):
-    """
-       Handle the response from a service call and send messages via dispatcher.
-
-       :param answer_status:
-       :param action_label: Identifier for logging
-       :param dispatcher: Rasa dispatcher for bot replies
-       :param answer: Response object from the service
-       :return: The text sent to the user (bot_response_text)
-       """
-
-    log_info_text(action_label, f"answer_status : {answer_status}")
-
-    if answer_status == 403:
-        bot_response_text = BOT_MESSAGES.get('not_authorized_user')
-        log_response_payload(action_label, answer_status, bot_response_text)
-        dispatcher.utter_message(bot_response_text)
-
-    elif answer_status == 404:
-        bot_response_text = answer.text
-        log_response_payload(action_label, answer_status, bot_response_text)
-        dispatcher.utter_message(bot_response_text)
-
-    elif answer_status == 200:
-        bot_response_text = answer.text
-        log_response_payload(action_label, answer_status, bot_response_text)
-        log_response_payload(action_label, answer_status, bot_response_text)
-        dto = json.loads(bot_response_text) if isinstance(bot_response_text, str) else bot_response_text
-        log_info_text(action_label, bot_response_text)
-        await _handle_decision(dispatcher, dto)
-
-    elif answer_status == 500:
-        error_data = answer.json()
-        # Log the detailed error but show a generic message to users
-        response = f"Server error: {error_data.get('error', 'Erreur inconnue')}"
-        bot_response_text = BOT_MESSAGES.get('technical_problem_error')
-        log_response_payload(action_label, answer_status, bot_response_text + response)
-        dispatcher.utter_message(bot_response_text)
-
-    else:
-        bot_response_text = BOT_MESSAGES.get('unexpected_error')
-        log_response_payload(action_label, answer_status, bot_response_text)
-        dispatcher.utter_message(bot_response_text)
-
-    return bot_response_text
-
-async def _handle_decision(dispatcher, dto: dict):
-    if dto.get("decisionCPGR"):
-        dispatcher.utter_message(text=dto['messageText'], image=dto['cardURL'])
-        get_bilan_final_results(dispatcher)
-    else:
-        send_message_forwarded_by_buttons(dispatcher, dto['messageText'])
-
-
-async def get_auth_binding_json(
-    tracker: Tracker,
-    service: IResultsService,
-    user_id
-):
-    # Clear any previously stored identity before validating a new binding.
-    tracker.slots["id_candidat"] = None
-    tracker.slots["full_name"] = None
-
-    try:
-        auth_binding_data = await service.get_chat_session_identity(
-            {"senderId": user_id},
-            rasa_to_spring_token
-        )
-    except (httpx.HTTPError, TimeoutError):
-        return None
-
-    # Accept either a JSON string or an already-parsed dictionary.
-    if isinstance(auth_binding_data, str):
-        try:
-            auth_binding_json = json.loads(auth_binding_data)
-        except json.JSONDecodeError:
-            return None
-
-    elif isinstance(auth_binding_data, dict):
-        auth_binding_json = auth_binding_data
-
-    else:
-        return None
-
-    # The response must be a dictionary containing a non-empty userId.
-    if not isinstance(auth_binding_json, dict):
-        return None
-
-    bound_user_id = auth_binding_json.get("userId")
-
-    if bound_user_id is None or not str(bound_user_id).strip():
-        return None
-
-    # Populate identity slots only after validation succeeds.
-    tracker.slots["id_candidat"] = bound_user_id
-    tracker.slots["full_name"] = auth_binding_json.get("fullName")
-
-    return auth_binding_json
-
-def get_candidate_id(tracker):
-    log_info_text("PPPPP : ", tracker.get_slot('last_intent'))
-    log_info_text("id_candidat : ", tracker.get_slot('id_candidat'))
-    log_info_text("full_name : ", tracker.get_slot('full_name'))
-    return tracker.get_slot("id_candidat")
-
-def get_candidate_details(tracker):
-    log_info_text("PPPPP : ", tracker.get_slot('last_intent'))
-    log_info_text("id_candidat : ", tracker.get_slot('id_candidat'))
-    log_info_text("full_name : ", tracker.get_slot('full_name'))
-    return tracker.get_slot("id_candidat"), tracker.get_slot('full_name')

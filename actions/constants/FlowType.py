@@ -50,6 +50,12 @@ class FlowType(str, Enum):
     def __str__(self):
         return self.value
 
+    RESULT_FLOWS = [
+        "deliberation",
+        "congrats",
+        "all_bilan"
+    ]
+
 SSCOMP_TO_FLOW = {
     "first_comp": FlowType.NOTE_FIRST_COMP,
     "second_comp": FlowType.NOTE_SECOND_COMP,

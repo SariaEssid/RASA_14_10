@@ -211,9 +211,6 @@ def log_response_payload(action_label: str, status: int, payload: Any):
 def log_info_text(action_label: str, message: str):
     log.info(f"ℹ️    {action_label} -> {message}")
 
-def log_info_expected_flow(action_label: str, message):
-    log.info(f"ℹ️    {action_label} -> Expected FLOW : {message}")
-
 def log_warn_text(action_label: str, message: str):
     log.warning(f"⚠️    {action_label} -> {message}")
 
