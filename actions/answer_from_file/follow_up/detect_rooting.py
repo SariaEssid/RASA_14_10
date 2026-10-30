@@ -29,6 +29,8 @@ CLITIC_PRONOUNS = {"le", "la", "les"}
 # Pronoms sujets ou particules de négation qui précèdent obligatoirement un pronom objet
 SUBJECT_OR_NEGATION = {"je", "tu", "il", "elle", "on", "nous", "vous", "ils", "elles", "ne", "n'"}
 
+MAIN_PARAM_VALUE = settings.MAIN_PARAM_VALUE
+
 class FollowUpDetector:
 
     def __init__(self):
@@ -50,43 +52,43 @@ class FollowUpDetector:
         reasons = {}
 
         # 1. Semantic similarity
-        if similarity > 0.5:
-            score += 0.55
-            reasons["semantic"] = 0.55
+        if similarity > settings.BASIC_THRESHOLD_VALUE:
+            score += self.threshold
+            reasons["semantic"] = self.threshold
         else:
             reasons["semantic"] = 0.0
 
         log_info_text("is_dead_end : ", str(is_dead_end))
         if "True" in str(is_dead_end):
-            score += 0.57
-            reasons["dead_end"] = 0.57
+            score += MAIN_PARAM_VALUE
+            reasons["dead_end"] = MAIN_PARAM_VALUE
         else:
             reasons["dead_end"] = 0.0
 
         if is_more_det:
-            score += 0.57
-            reasons["more_det"] = 0.57
+            score += MAIN_PARAM_VALUE
+            reasons["more_det"] = MAIN_PARAM_VALUE
         else:
             reasons["more_det"] = 0.0
 
         log_info_text("pron_det : ", str(pron_det))
         if pron_det > 0:
-            score += 0.57
-            reasons["pron_det"] = 0.57 # est ce que le type de cette epreuve est pdf ou video
+            score += MAIN_PARAM_VALUE
+            reasons["pron_det"] = MAIN_PARAM_VALUE # est ce que le type de cette epreuve est pdf ou video
         else:
             reasons["pron_det"] = 0.0
 
         # 2. Pronoun (VERY strong)
         if is_started_with_kw:
-            score += 0.6
-            reasons["begin_kw"] = 0.6
+            score += settings.MAIN_BEGIN_KEYWORD
+            reasons["begin_kw"] = settings.MAIN_BEGIN_KEYWORD
         else:
             reasons["begin_kw"] = 0.0
 
         # 4. Intent continuity (fallback signal)
         if intent == "nlu_fallback" and last_intent not in muted_intents:
-            score += 0.3
-            reasons["fallback"] = 0.3
+            score += settings.FALLBACK_VALUE
+            reasons["fallback"] = settings.FALLBACK_VALUE
         else:
             reasons["fallback"] = 0.0
 

@@ -15,7 +15,7 @@ from typing import List
 import unicodedata
 from sklearn.metrics.pairwise import cosine_similarity
 
-from actions.constants.Constants import BOT_MESSAGES, ALL_COMPOSANTES_PRINCIPALES
+from actions.constants.Constants import BOT_MESSAGES, ALL_COMPOSANTES_PRINCIPALES, DIRECT_HAND_FLAG
 from actions.logging.logging_helpers import log_info_text, log_warn_text
 from actions.semantic.faiss_ranking import rank_candidates, pick_weighted_answer
 from actions.settings.settings import settings
@@ -208,12 +208,12 @@ def get_extracted_slots(action_label, tracker):
 
 ##########################################################################
 PDF_WARMUP_QUERIES = {
-    # normalize_path(settings.PATH_HIERARCY): "donner le nom de Composante 1",
-    # normalize_path(settings.PATH_HIERARCY_DATE): "donner date test qcm",
-    # normalize_path(settings.PATH_HIERARCY_DURATION): "donner durée test qcm",
-    # normalize_path(settings.PATH_HIERARCY_EXAM_KIND): "est ce que production rdi est pdf",
-    # normalize_path(settings.PATH_HIERARCY_PLACE): "est ce que test qcm se fait en présentiel",
-    # normalize_path(settings.PATH_HIERARCY_SCORE): "donner score test qcm",
+    # normalize_path(settings.PATH_HIERARCHY): "donner le nom de Composante 1",
+    # normalize_path(settings.PATH_HIERARCHY_DATE): "donner date test qcm",
+    # normalize_path(settings.PATH_HIERARCHY_DURATION): "donner durée test qcm",
+    # normalize_path(settings.PATH_HIERARCHY_EXAM_KIND): "est ce que production rdi est pdf",
+    # normalize_path(settings.PATH_HIERARCHY_PLACE): "est ce que test qcm se fait en présentiel",
+    # normalize_path(settings.PATH_HIERARCHY_SCORE): "donner score test qcm",
     # normalize_path(settings.PATH_PG_ADVICES): "conseils pour test qcm",
     # normalize_path(settings.PATH_PG_SUFFISIANT_EXCEPTIONAL): "qui met ma candidature exceptionnelle",
 }
@@ -333,3 +333,14 @@ def is_followup(current_question, last_question):
     log_info_text("👉   👉   👉   👉   👉   Follow-up similarity : ", str(similarity) + " - " + str(len(words)))
 
     return similarity > settings.FOLLOWUP_THRESHOLD
+
+
+def track_prompt_decision_params(action_label, prompt, decision_infos): ## NEXT
+    log_info_text(action_label, "🎯 prompting : " + prompt)
+    log_info_text(f"{DIRECT_HAND_FLAG}", f"{action_label}: \n")
+    if decision_infos:
+        log_info_text("👉  ROUTING SCORE: ", f"{decision_infos.score} => {decision_infos.mode}")
+        for key, value in decision_infos.reasons.items():
+            log_info_text(f"-  {key} ", f"{value}")
+
+    log_info_text(action_label, "\n")

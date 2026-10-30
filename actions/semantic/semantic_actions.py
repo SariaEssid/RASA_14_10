@@ -11,13 +11,13 @@ from rasa_sdk import Tracker
 from rasa_sdk.events import FollowupAction
 from rasa_sdk.executor import CollectingDispatcher
 
-from actions.actions import normalize_text, is_followup
+from actions.actions import normalize_text, is_followup, track_prompt_decision_params
 from actions.answer_from_file.answer_from_file_actions import BaseDynamicLLMAction
-from actions.answer_from_file.llm_helpers import get_decision_mode, track_prompt_decision_params
+from actions.answer_from_file.follow_up.retrieve_decision_mode import get_decision_mode
 from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.ActionsNome import ActionsNome
 from actions.constants.Constants import BOT_MESSAGES, FEEDBACK_BUTTONS, DIRECT_HAND_FLAG
-from actions.context_awarness_flow.action_context_awarness import get_forwarded_action
+from actions.context_awareness_flow.action_context_awareness import get_forwarded_action
 from actions.logging.logger import log_faiss_unknown_question, log_chat
 from actions.logging.logging_helpers import get_current_intent, log_info_text, get_util_values_for_semantic, \
     log_exception_text, log_error_text, get_util_values_with_log
@@ -82,7 +82,7 @@ class ActionSemanticQA(BaseDynamicLLMAction):
             model = get_model()
         except Exception as e:
             log_exception_text(action_label, f"Semantic resources not ready: {e}")
-            send_multiple_messages_forwarded_by_buttons(dispatcher, str(e), FEEDBACK_BUTTONS)
+            send_multiple_messages_forwarded_by_buttons(dispatcher, BOT_MESSAGES.get('no_context_found'), FEEDBACK_BUTTONS)
             return flatten_events(
                 get_return_slots_qa_intent_flow(
                     question,
@@ -153,7 +153,7 @@ class ActionSemanticQA(BaseDynamicLLMAction):
         try:
             sscomp = tracker.get_slot("sscomp")
             log_info_text(action_label, f"sscomp: {sscomp}")
-            if not sscomp and score > settings.semantic_threshold:
+            if not sscomp and score > settings.SEMANTIC_THRESHOLD:
                 active_flow = tracker.get_slot("active_flow")
                 if isinstance(answers, list):
                     best_answer = answers[best_index]
@@ -180,8 +180,7 @@ class ActionSemanticQA(BaseDynamicLLMAction):
 
         except Exception as e:
             log_exception_text(action_label, f"Answer retrieval error: {e}")
-            answer = "ERROR NOT FOUND" # call_llm_fallback(question, last_user_question, last_user_answer)
-            await log_chat(user_id, session_id, question, answer, intent, 1)
+            await log_chat(user_id, session_id, question, str(e), intent, 1)
             return flatten_events(
                 get_return_slots_qa_intent_flow(
                     question,

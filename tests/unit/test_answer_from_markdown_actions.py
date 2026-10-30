@@ -8,11 +8,10 @@ from unittest.mock import AsyncMock, Mock
 
 import httpx, pytest, respx
 
-from actions.answer_from_file.answer_from_markdown.answer_from_markdown_actions import (
+from actions.answer_from_file.answer_from_markdown.answer_from_langchain_grades_action import (
     format_values,
     detect_domain,
-    get_academic_stuff_rules,
-    get_native_question_domain_nbr_chunks, search_expert_all_roles, get_infos_by_expert_name,
+    get_native_question_domain_nbr_chunks,
     get_comp_values_from_synonyms
 )
 from actions.answer_from_file.llm_helpers import get_context_from_langchain_rag, RAGServiceUnavailable
@@ -158,58 +157,6 @@ def test_get_native_question_domain_default():
     assert domains == []
     assert nbr_chunks == 2
 
-def test_search_expert_all_roles_not_found():
-    markdown = """
-## Jury
-| Role | TI |
-|---|---|
-| Président de Jury | Ahmed |
-"""
-
-    result = search_expert_all_roles("saria", markdown)
-
-    assert result is None
-
-def test_search_expert_all_roles_multiple_results():
-    markdown = """
-## Jury
-| Role | TI |
-|---|---|
-| Président | Saria |
-
-## Evaluateur
-| Role | GL |
-|---|---|
-| Evaluateur | Saria |
-"""
-
-    result = search_expert_all_roles("saria", markdown)
-
-    assert "occupe les fonctions suivantes" in result
-
-
-def test_get_infos_by_expert_name_entities(monkeypatch):
-
-    tracker = Mock()
-
-    tracker.get_latest_entity_values.return_value = ["expert"]
-
-    result = get_infos_by_expert_name(ActionsLabel.PY_RESPOND_FROM_PDF_FOR_EVAL_PJ, tracker)
-
-    assert isinstance(result, list)
-
-def test_get_infos_by_expert_name_slot_fallback():
-
-    tracker = Mock()
-
-    tracker.get_latest_entity_values.return_value = []
-
-    tracker.get_slot.return_value = ["expert"]
-
-    result = get_infos_by_expert_name(ActionsLabel.PY_RESPOND_FROM_PDF_FOR_EVAL_PJ, tracker)
-
-    assert isinstance(result, list)
-
 def test_get_comp_values_from_synonyms(monkeypatch):
 
     monkeypatch.setattr(
@@ -237,7 +184,7 @@ def test_load_util_values_none(monkeypatch):
         lambda *_a, **_k: None
     )
 
-    from actions.answer_from_file.answer_from_markdown.answer_from_markdown_actions import load_util_values
+    from actions.answer_from_file.answer_from_markdown.answer_from_langchain_grades_action import load_util_values
 
     with pytest.raises(TypeError):
         load_util_values(FakeTracker(), "label")
@@ -269,7 +216,7 @@ class FakeTracker:
 @pytest.mark.asyncio
 # ✅ Correction : Retrait du paramètre 'tracker' inutilisé dans la signature globale de la fonction du test
 async def test_evaluators_pj_no_sections(monkeypatch):
-    from actions.answer_from_file.answer_from_markdown.answer_from_markdown_actions import ActionEvaluatorsAndPJ
+    from actions.answer_from_file.answer_from_markdown.answer_from_langchain_grades_action import ActionEvaluatorsAndPJ
 
     action = ActionEvaluatorsAndPJ()
 
@@ -292,7 +239,7 @@ async def test_evaluators_pj_no_sections(monkeypatch):
 @pytest.mark.asyncio
 # ✅ Correction : Retrait du paramètre 'tracker' inutilisé ici aussi
 async def test_academic_short_and_detailed(monkeypatch):
-    from actions.answer_from_file.answer_from_markdown.answer_from_markdown_actions import ActionAcademicStuff
+    from actions.answer_from_file.answer_from_markdown.answer_from_langchain_grades_action import ActionAcademicStuff
 
     tracker: Any = FakeTracker()
     action = ActionAcademicStuff()

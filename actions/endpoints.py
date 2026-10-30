@@ -20,16 +20,13 @@ from actions import (
     ActionSemanticQA,
     ActionSelectButton,
     ActionSetSession,
-    ActionSetUser
+    ActionSetUser, ActionEvaluatorsAndPJ, ActionLangChainRouting
 )
 from actions.answer_from_file.answer_from_json.answer_from_json_actions import ActionGetResponseFromJSON
-from actions.answer_from_file.answer_from_markdown.answer_from_markdown_actions import (
-    ActionAcademicStuff,
-    ActionEvaluatorsAndPJ,
-    ActionLangChainRouting
-)
+from actions.answer_from_file.answer_from_markdown.answer_from_langchain_grades_action import ActionAcademicStuff
 from actions.answer_from_file.answer_from_pdf.answer_from_pdf_actions import ActionPGInfosFromPDF
-from actions.context_awarness_flow.action_context_awarness import ActionMaintainConversationFlow
+from actions.answer_from_file.llm_helpers import HttpClientManager
+from actions.context_awareness_flow.action_context_awareness import ActionMaintainConversationFlow
 from actions.util_actions.common_actions import ActionUtterBotTyping
 from actions.utils.services import HttpResultsService
 
@@ -88,10 +85,9 @@ app.ctx.executor = executor
 
 # Raise Sanic middleware-level timeouts to match the Rasa endpoint timeout.
 # Note: if you run behind an ingress/proxy, its own timeout may still be lower.
+app.config.KEEP_ALIVE_TIMEOUT = 600
 app.config.RESPONSE_TIMEOUT = 600
 app.config.REQUEST_TIMEOUT = 600
-app.config.KEEP_ALIVE_TIMEOUT = 600
-
 
 # --- Define /webhook route ---
 @app.post("/webhook")
@@ -115,6 +111,11 @@ async def metrics(request: Request):
     log.debug("Metrics requested by IP: %s", request.remote_addr)
     return sanic_text("# Rasa Action Server\n", content_type="text/plain; version=0.0.4")
 
+# --- Graceful HTTP client shutdown ---
+@app.listener("after_server_stop")
+async def close_http_client(app, loop):
+    await HttpClientManager.close()
+    log.info("Shared HTTP client closed successfully.")
 
 # --- Run ---
 if __name__ == "__main__":

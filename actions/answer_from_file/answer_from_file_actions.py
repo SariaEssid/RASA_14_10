@@ -7,6 +7,7 @@ actions/answer_from_file/answer_from_file_actions.py
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import time
 from pathlib import Path
@@ -16,6 +17,7 @@ from typing import Optional
 from typing import cast
 
 import httpx
+from cachetools import TTLCache
 from openai import APITimeoutError, APIConnectionError, RateLimitError, AsyncOpenAI, APIStatusError
 from openai.types.chat import (
     ChatCompletionMessageParam,
@@ -82,25 +84,71 @@ class JsonCacheManager:
             cls._time.pop(key, None)
 
 
-# -----------------------------
+# ------------------------------
 # Centralized LLM Response Cache
-# -----------------------------
+# ------------------------------
 class LLMCache:
-    """Simple case-insensitive LLM response cache. You can replace this with Redis later."""
-    _cache: Dict[str, str] = {}
+    """Thread-safe, bounded, context-aware LLM response cache."""
+
+    _cache = TTLCache(maxsize=1000, ttl=3600)
     _lock = Lock()
 
     @classmethod
-    def get(cls, query: str) -> Optional[str]:
-        q = (query or "").strip().lower()
-        with cls._lock:
-            return cls._cache.get(q)
+    def _generate_key(
+        cls,
+        query: str,
+        model: str,
+        system_mission: str,
+        user_context: Optional[str] = None
+    ) -> str:
+
+        cache_data = {
+            "query": (query or "").strip(),
+            "model": model,
+            "system_mission": (system_mission or "").strip(),
+            "user_context": user_context or ""
+        }
+
+        serialized = json.dumps(
+            cache_data,
+            sort_keys=True,
+            ensure_ascii=False
+        )
+
+        return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
     @classmethod
-    def set(cls, query: str, answer: str) -> None:
-        q = (query or "").strip().lower()
+    def get(
+        cls,
+        query: str,
+        model: str,
+        system_mission: str,
+        user_context: Optional[str] = None
+    ) -> Optional[str]:
+
+        key = cls._generate_key(
+            query, model, system_mission, user_context
+        )
+
         with cls._lock:
-            cls._cache[q] = answer
+            return cls._cache.get(key)
+
+    @classmethod
+    def set(
+        cls,
+        query: str,
+        answer: str,
+        model: str,
+        system_mission: str,
+        user_context: Optional[str] = None
+    ) -> None:
+
+        key = cls._generate_key(
+            query, model, system_mission, user_context
+        )
+
+        with cls._lock:
+            cls._cache[key] = answer
 
 # -----------------------------
 # Base Dynamic Action
@@ -183,7 +231,12 @@ class BaseDynamicLLMAction(Action):
             use_cache: bool = True,
     ) -> str:
         if use_cache:
-            cached = LLMCache.get(prompt)
+            cached = LLMCache.get(
+                query=prompt,
+                model=settings.LLM_MODEL,
+                system_mission=agent_mission
+            )
+
             if isinstance(cached, str) and cached.strip():
                 return cached
 
@@ -231,7 +284,12 @@ class BaseDynamicLLMAction(Action):
             )
 
         if use_cache:
-            LLMCache.set(prompt, answer)
+            LLMCache.set(
+                query=prompt,
+                answer=answer,
+                model=settings.LLM_MODEL,
+                system_mission=agent_mission
+            )
 
         return answer
 
@@ -347,8 +405,7 @@ def track_values(tracker, action_label, last_intent, last_second_question, inten
 
     return maintained_intent, last_last_user_question, last_answer
 
-def log_params(action_label, domains, is_hard, intent):
+def log_params(action_label, domains, intent):
 
-    log_info_text(action_label, "IS_HARD : " + str(is_hard))
     log_info_text(action_label, "DOMAIN : " + str(domains))
     log_info_text(action_label, "INTENT : " + intent)

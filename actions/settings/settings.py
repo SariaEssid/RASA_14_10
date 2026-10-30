@@ -51,8 +51,8 @@ class Settings(BaseSettings):
     # General
     # -------------------------
     DRIVE_LINK: str = "https://drive.google.com/uc?export=download&id"
-    semantic_threshold: float = 0.9
-    FOLLOWUP_THRESHOLD = 0.55
+    SEMANTIC_THRESHOLD: float = 0.9
+    FOLLOWUP_THRESHOLD: float = 0.55
     log_level: str = "INFO"
     ANONYMIZATION_SALT: Optional[str] = os.getenv("ANONYMIZATION_SALT")
 
@@ -100,19 +100,18 @@ class Settings(BaseSettings):
     GRADES_JSON_PATH: Optional[str] = str(JSON_FILES_DIR / "concerned_grades.json")
 
     # Hierarchy
-    PATH_HIERARCY_ALL: Optional[str] = str(PDF_FILES_DIR / "hierarchy_all.pdf")
-    PATH_HIERARCY: Optional[str] = str(PDF_FILES_DIR / "hierarchy.pdf")
-    PATH_HIERARCY_DATE: Optional[str] = str(PDF_FILES_DIR / "hierarchy_date.pdf")
-    PATH_HIERARCY_DURATION: Optional[str] = str(PDF_FILES_DIR / "hierarchy_duration.pdf")
-    PATH_HIERARCY_EXAM_KIND: Optional[str] = str(PDF_FILES_DIR / "hierarchy_kind_exam.pdf")
-    PATH_HIERARCY_PLACE: Optional[str] = str(PDF_FILES_DIR / "hierarchy_place.pdf")
-    PATH_HIERARCY_SCORE: Optional[str] = str(PDF_FILES_DIR / "hierarchy_score.pdf")
+    PATH_HIERARCHY_ALL: Optional[str] = str(PDF_FILES_DIR / "hierarchy_all.pdf")
+    PATH_HIERARCHY: Optional[str] = str(PDF_FILES_DIR / "hierarchy.pdf")
+    PATH_HIERARCHY_DATE: Optional[str] = str(PDF_FILES_DIR / "hierarchy_date.pdf")
+    PATH_HIERARCHY_DURATION: Optional[str] = str(PDF_FILES_DIR / "hierarchy_duration.pdf")
+    PATH_HIERARCHY_EXAM_KIND: Optional[str] = str(PDF_FILES_DIR / "hierarchy_kind_exam.pdf")
+    PATH_HIERARCHY_PLACE: Optional[str] = str(PDF_FILES_DIR / "hierarchy_place.pdf")
+    PATH_HIERARCHY_SCORE: Optional[str] = str(PDF_FILES_DIR / "hierarchy_score.pdf")
 
     # Experts
-    PATH_HIERARCY_EVALS_JURYS_MRKDN_VS: Optional[str] = str(MARKDOWN_FILES_DIR / "hierarchy_evals_jurys_vs.md")
-    PATH_HIERARCY_EVALS_JURYS_MRKDN_BY: Optional[str] = str(MARKDOWN_FILES_DIR / "hierarchy_evals_jurys_by.md")
-    PATH_HIERARCY_EVALS_JURYS_MRKDN_NAME: Optional[str] = str(MARKDOWN_FILES_DIR / "hierarchy_evals_jurys_name.md")
-    PATH_HIERARCY_EVALS_JURYS_MRKDN_ALL: Optional[str] = str(MARKDOWN_FILES_DIR / "hierarchy_evals_jurys_all.md")
+    PATH_HIERARCHY_EVALS_JURYS_MRKDN_BY: Optional[str] = str(MARKDOWN_FILES_DIR / "hierarchy_evals_jurys_by.md")
+    PATH_HIERARCHY_EVALS_JURYS_MRKDN_NAME: Optional[str] = str(MARKDOWN_FILES_DIR / "hierarchy_evals_jurys_name.md")
+    PATH_HIERARCHY_EVALS_JURYS_MRKDN_ALL: Optional[str] = str(MARKDOWN_FILES_DIR / "hierarchy_evals_jurys_all.md")
 
     # -------------------------
     # Models
@@ -137,13 +136,20 @@ class Settings(BaseSettings):
     CHUNK_OVERLAP = 128
 
     # -------------------------
+    # Scoring parameters
+    # -------------------------
+    BASIC_THRESHOLD_VALUE: float = 0.5
+    MAIN_BEGIN_KEYWORD: float = 0.6
+    MAIN_PARAM_VALUE: float = 0.57
+    FALLBACK_VALUE: float = 0.3
+
+    # -------------------------
     # Validators
     # -------------------------
-    @validator("semantic_threshold")
+    @validator("SEMANTIC_THRESHOLD")
     def validate_threshold(cls, v):
         if not 0 <= v <= 1:
             raise ValueError("Threshold must be between 0 and 1")
         return v
-
 
 settings = Settings()

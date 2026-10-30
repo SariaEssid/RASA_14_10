@@ -377,9 +377,9 @@ def bot_instructions_attentions():
 
 def solo_feedback():
     return """
-Si contexte ne contient pas les mots clés ```DSI```, ```ESPRIT``` ou ```PGPG``` :
+⛔ Si contexte ne contient pas les mots clés ```DSI```, ```ESPRIT``` ou ```PGPG``` :
     1. Indiquer explicitement à l'utilisateur qu'il s'agit d'un sujet hors contexte PGPG, ESPRIT, DSI .
-    2. Fournir ensuite une réponse générale uniquement à titre informatif, en précisant clairement qu'elle repose sur des connaissances générales et non sur les informations officielles du système PGPG.
+    2. **NE JAMAIS IGNORER** : Fournir ensuite une réponse générale uniquement à titre informatif, en précisant clairement qu'elle repose sur des connaissances générales et non sur les informations officielles du système PGPG.
 
 Gestion des émotions :
 Si l'utilisateur partage des émotions, refléter d'abord le même sentiment en une seule phrase (empathie/connexion), puis l'informer gentiment que votre mission se limite exclusivement à l'assistance du système PGPG.

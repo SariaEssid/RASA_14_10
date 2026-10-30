@@ -106,7 +106,7 @@ class ActionCongratFinalResults(Action):
             except Exception as e:
                 bot_response_text = alert_technical_problem_exception(action_label, e)
         else:
-            bot_response_text = "ID_CANDIDAT NOT FOUND"
+            bot_response_text = BOT_MESSAGES.get("login_required")
 
         await log_chat(user_id, session_id, user_input, bot_response_text, intent, confidence)
 

@@ -37,6 +37,41 @@ flowchart LR
 
 ---
 
+## Hybrid Intent Routing
+
+The chatbot routes approximately 83 intents to different response paths:
+
+| Route                   | Intents | Response source                                                                                                 |
+|-------------------------|--------:|-----------------------------------------------------------------------------------------------------------------|
+| Default                 |       5 | Default conversation handling, including `nlu_fallback`, `affirm_helpful`, `deny_helpful`, `affirm`, and `deny` |
+| Easy: candidate results |       6 | Spring Boot services                                                                                            |
+| Easy: FAQ               |      22 | Direct semantic search using FAISS                                                                              |
+| Exceptions              |      10 | Local PDF or JSON files                                                                                         |
+| Hard questions          |      40 | RAG retrieval over Markdown knowledge-base files                                                                |
+
+When a question does not match the FAQ similarity threshold, the conversation is passed to `ActionMaintainConversationFlow` for LLM-based fallback handling.
+
+### Out-of-scope and missing-context behavior
+
+The fallback prompt includes instructions from `solo_feedback()`.
+When a question is unrelated to PGPG, ESPRIT, or DSI—or when the RAG context is empty—the LLM is instructed to explain the chatbot’s scope.
+It may provide general information when appropriate, clearly marked as general rather than official PGPG information.
+If the user expresses an emotion, the chatbot responds empathetically before explaining its scope.
+
+### Examples
+
+#### Example-1
+**User:** Je vais acheter un PC. Quel est le modèle le plus performant ?
+
+**Bot:** Comme votre question porte sur l'achat d'un PC, il s'agit d'un sujet hors contexte du système PGPG ; à titre informatif uniquement (basé sur des connaissances générales et non sur les informations officielles PGPG), les modèles les plus performants actuellement sur le marché sont généralement des stations de travail comme le Dell Precision ou des ordinateurs portables haut de gamme gaming/création comme le ASUS ROG Zephyrus ou le MacBook Pro M3 Max, mais je me limite exclusivement à l'assistance PGPG pour vos passages de grade.
+
+#### Example-2
+**User:** donner la mission de ef
+
+**Bot:** En tant que candidat Enseignant Formateur (EF), vos missions consistent à assurer des modules d’enseignement en autonomie, à encadrer des projets étudiants et des stages, à participer à la conception et à l’évaluation des examens, ainsi qu’à contribuer à l’amélioration des contenus pédagogiques, tout en sachant que vous ne gérez pas les sessions.
+
+---
+
 ## 📌 Project Purpose
 
 This chatbot was developed to:

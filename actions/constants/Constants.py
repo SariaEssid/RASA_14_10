@@ -7,6 +7,16 @@ actions/constants/Constants.py
 from actions.constants.ActiveIntents import ActiveIntents
 from actions.settings.settings import settings
 
+BLOCKAGE_PATTERNS = [
+    r"\baucun\b",
+    r"\baucune\b",
+    r"\brien\b",
+    r"\bn'\b",
+    r"\bne\b",
+    r"\bpas\b",
+    r"\bnon\b"
+]
+
 ALL_COMPOSANTES_PRINCIPALES = ["Composante 1", "Composante 2", "Composante 3"]
 
 ALL_SLOTS = [
@@ -139,11 +149,11 @@ BOT_MESSAGES = {
 }
 
 INTENT_MAP_PG_INFO = {
-    ActiveIntents.GIVE_DATE_BY_COMP.value: settings.PATH_HIERARCY_DATE,
-    ActiveIntents.GIVE_DURATION_BY_COMP.value: settings.PATH_HIERARCY_DURATION,
-    ActiveIntents.GIVE_PLACE_BY_COMP.value: settings.PATH_HIERARCY_PLACE,
-    ActiveIntents.GIVE_DELIVERY_KIND_BY_COMP.value: settings.PATH_HIERARCY_EXAM_KIND,
-    ActiveIntents.GIVE_SCORE_BY_COMP.value: settings.PATH_HIERARCY_SCORE
+    ActiveIntents.GIVE_DATE_BY_COMP.value: settings.PATH_HIERARCHY_DATE,
+    ActiveIntents.GIVE_DURATION_BY_COMP.value: settings.PATH_HIERARCHY_DURATION,
+    ActiveIntents.GIVE_PLACE_BY_COMP.value: settings.PATH_HIERARCHY_PLACE,
+    ActiveIntents.GIVE_DELIVERY_KIND_BY_COMP.value: settings.PATH_HIERARCHY_EXAM_KIND,
+    ActiveIntents.GIVE_SCORE_BY_COMP.value: settings.PATH_HIERARCHY_SCORE
 }
 
 # SPECIAITIES

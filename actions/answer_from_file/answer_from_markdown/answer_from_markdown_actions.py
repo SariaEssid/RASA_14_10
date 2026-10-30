@@ -34,7 +34,7 @@ from actions.answer_from_file.llm_helpers import detect_composantes, \
     rewrite_using_slots_prod_grade, get_synonyms_lookup, get_grade_speciality_values, \
     get_sscomp_values, get_context_from_langchain_rag, get_filename_context_prompt, \
     verif_hard_qe, mapping_old_new_grades, get_util_values, track_prompt_decision_params, \
-    get_decision_mode, get_clean_slot_values, skip_unrelated_action, get_academic_stuff_rules
+    get_decision_mode, get_clean_slot_values, skip_unrelated_action
 from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.ActionsNome import ActionsNome
 from actions.constants.ActiveIntents import ActiveIntents
@@ -98,11 +98,6 @@ class ActionEvaluatorsAndPJ(BaseDynamicLLMAction):
             elif intent == ActiveIntents.ASK_EVAL_VS_PJ.value:
                 filename, context = await get_context_from_langchain_rag(action_label, question, ["evalsjurys"], [],
                                                                          nbr_chunks)
-                if not context:
-                    dispatcher.utter_message(
-                        BOT_MESSAGES.get("no_context_found")
-                    )
-                    return []
 
                 prompt = get_extended_bot_mission(question, context)
                 tag = "VS"
@@ -228,7 +223,6 @@ class ActionAcademicStuff(BaseDynamicLLMAction):
                 filename, context, question = await get_filename_context(ctx)
                 prompt = get_extended_bot_mission(question, context)
 
-            context += get_academic_stuff_rules()
             track_prompt_decision_params(action_label, prompt, decision_infos)
 
             answer = await self.call_llm_safe(

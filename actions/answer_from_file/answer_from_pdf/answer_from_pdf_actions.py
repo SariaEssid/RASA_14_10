@@ -13,30 +13,31 @@ from rasa_sdk import Tracker
 from rasa_sdk.events import SlotSet
 from rasa_sdk.executor import CollectingDispatcher
 
-from actions.actions import append_friendly_intro_to_answer, get_local_header, get_extracted_slots
+from actions.actions import append_friendly_intro_to_answer, get_local_header, get_extracted_slots, \
+    track_prompt_decision_params
 from actions.answer_from_file.answer_from_file_actions import BaseDynamicLLMAction, load_util_values, \
     fusion_and_call_llm, log_params, track_values
-from actions.answer_from_file.answer_from_markdown.answer_from_markdown_actions import \
+from actions.answer_from_file.answer_from_markdown.answer_from_langchain_grades_action import \
     get_native_question_domain_nbr_chunks, \
     get_comp_values_from_synonyms
 from actions.answer_from_file.answer_from_pdf.pdf_rag_pdf import retrieve_context_pdf
 from actions.answer_from_file.bot_missions import get_standard_bot_mission, \
     get_detailed_standard_full_last_conv_bot_mission_with_context
-from actions.answer_from_file.llm_helpers import get_file_path, rewrite_using_slots_prod_grade, get_synonyms_lookup, \
-    skip_duplication, \
-    track_prompt_decision_params, get_decision_mode
+from actions.answer_from_file.follow_up.retrieve_decision_mode import get_decision_mode
+from actions.answer_from_file.llm_helpers import rewrite_using_slots_prod_grade, get_synonyms_lookup
 from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.ActionsNome import ActionsNome
 from actions.constants.ActiveIntents import ActiveIntents
 from actions.constants.Constants import FEEDBACK_BUTTONS, INTENT_MAP_PG_INFO, DIRECT_HAND_LONG, DIRECT_HAND_FLAG, \
-    GO_SHORT
+    GO_SHORT, BOT_MESSAGES
 from actions.constants.EntitiesMapping import ALL_ENTITIES_MAPPINGS
 from actions.logging.logger import log_chat
 from actions.logging.logging_helpers import log_info_text
 from actions.settings.settings import settings
 from actions.utils.exception_error_messages import unexpected_exception_dsi
 from actions.utils.message_helpers import send_multiple_messages_forwarded_by_buttons
-from actions.utils.slots_helpers import get_return_slots_for_conversations, get_slots_to_set
+from actions.utils.slots_helpers import get_return_slots_for_conversations, get_slots_to_set, \
+    get_slots_to_set_last_answer_flow
 
 
 class ActionPGInfosFromPDF(BaseDynamicLLMAction):
@@ -60,7 +61,7 @@ class ActionPGInfosFromPDF(BaseDynamicLLMAction):
             detected_slots = [slot_speciality_value, slot_grade_value, slot_sscomp_value, slot_expert_value]
             entities = ["sscomp", "speciality"]
 
-            PDF_PATH = get_file_path(intent, INTENT_MAP_PG_INFO, settings.PATH_HIERARCY_ALL)
+            PDF_PATH = get_file_path(intent, INTENT_MAP_PG_INFO, settings.PATH_HIERARCHY_ALL)
 
             nbr_chunks = settings.RAG_DEFAULT_CHUNKS
             maintained_intent = intent
@@ -148,3 +149,25 @@ class ActionPGInfosFromPDF(BaseDynamicLLMAction):
             answer = await unexpected_exception_dsi(dispatcher, action_label, payload_tech_error, str(unexpected))
             await log_chat(user_id, session_id, native_question, answer, intent, confidence)
             return [SlotSet("last_answer", f"UNEXPECTED_ERROR: {str(unexpected)}")]
+
+def get_file_path(intent, intent_map, fallback_intent):
+    return intent_map.get(intent, fallback_intent)
+
+def skip_duplication(self, tracker, action_label):
+    last_intent = tracker.get_slot("last_intent")
+    active_flow = tracker.get_slot("active_flow")
+
+    log_info_text(action_label, f"COMPARE : {tracker.latest_action_name} - {self.name()}")
+    if tracker.latest_action_name in ActionsLabel.SKIPPED_ACTIONS_FROM_LANG_CHAIN or tracker.latest_action_name == self.name():
+        log_info_text(action_label, f"{BOT_MESSAGES.get('skip_duplication')} - {action_label}")
+
+        # Capture the slots to be set
+        slots_to_set = get_return_slots_for_conversations(
+            get_slots_to_set_last_answer_flow(active_flow, tracker.get_slot("last_answer"))
+        )
+
+        # Return a 3-tuple, perhaps using None for the unused variables
+        # or wrapping your slots to be processed later
+        return None, slots_to_set
+
+    return last_intent, active_flow

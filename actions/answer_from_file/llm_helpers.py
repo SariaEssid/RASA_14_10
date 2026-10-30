@@ -5,127 +5,149 @@ actions/answer_from_file/llm_helpers.py
 """
 
 from __future__ import annotations
-import re
+
 import os
+import re
 from datetime import datetime, timezone
-from typing import List, cast
 
 import httpx
 import yaml
 
-from actions.actions import normalize_text, check_is_excluded, remove_excluded_patterns, START_WORDS
+from actions.actions import normalize_text
 from actions.answer_from_file.bot_missions import get_short_standard_full_last_conv_bot_mission_with_context_alerts, \
-    get_detailed_standard_full_last_conv_bot_mission_with_context, get_extended_bot_mission_with_alerts, give_format, \
-    check_is_dead_end_prompt
-from actions.answer_from_file.follow_up.detect_rooting import FollowUpDetector
-from actions.answer_from_file.follow_up.pron_det_checking import check_pronoun_det
-from actions.constants.ActionsLabel import ActionsLabel
+    get_detailed_standard_full_last_conv_bot_mission_with_context, get_extended_bot_mission_with_alerts, give_format
 from actions.constants.ActiveIntents import ActiveIntents
-from actions.constants.Constants import BOT_MESSAGES, DIRECT_HAND_FLAG
 from actions.logging.logger import notify_team_leader_by_technical_problem
 from actions.logging.logging_helpers import log_info_text, log_exception_text
-from actions.semantic.semantic_actions import is_followup
 from actions.settings.config import LANG_CHAIN_URL
 from actions.settings.settings import settings
-from actions.utils.message_helpers import send_fallback_problem_to_dsi_forwarded_by_buttons
-from actions.utils.slots_helpers import get_slots_to_set_last_answer_flow, get_return_slots_for_conversations
 
 
 class RAGServiceUnavailable(Exception):
     pass
 
-def verif_hard_qe():
-    keywords = [
-        "de toute", "de toutes", "vs", "tous", "versus",
-        "compare", "comparer", "comparez",
-        "différents", "différent", "differents", "different",
-        "difference", "différence",
-        "explique", "expliquer", "expliquez"
-    ]
+class HttpClientManager:
 
-    complex_qe_dict = r"\b(" + "|".join(keywords) + r")\b"
-    return complex_qe_dict
+    _client: httpx.AsyncClient | None = None
 
-BLOCKAGE_PATTERNS = [
-    r"\baucun\b",
-    r"\baucune\b",
-    r"\brien\b",
-    r"\n'\b",
-    r"\n'\b",
-    r"\bne\b",
-    r"\bpas\b",
-    r"\bnon\b"
-]
+    @classmethod
+    def get_client(cls) -> httpx.AsyncClient:
 
-def check_more_details(current_question: str) -> bool:
-    # Matches 'detail', 'détail', 'details', 'détails', 'detailler', 'détailler', 'detaille', etc.
-    pattern = r"\bd[eé]tail"
-    return bool(re.search(pattern, current_question, re.IGNORECASE))
+        if cls._client is None or cls._client.is_closed:
 
-def check_is_blocked_pattern(current_question: str) -> bool:
-    return any(re.search(pattern, current_question, re.IGNORECASE) for pattern in BLOCKAGE_PATTERNS)
+            cls._client = httpx.AsyncClient(
+                timeout=httpx.Timeout(60.0, connect=5.0),
+                limits=httpx.Limits(max_connections=100, max_keepalive_connections=20, keepalive_expiry=30.0)
+            )
 
-def is_started_with_keyword(question: str) -> bool:
-    if not question:
-        return False
+        return cls._client
 
-    cleaned_question = question.strip().lower()
+    @classmethod
+    async def close(cls):
 
-    return cleaned_question.startswith(START_WORDS)
+        if cls._client is not None and not cls._client.is_closed:
+            await cls._client.aclose()
 
-def detect_composantes(question: str) -> List[str]:
-    """
-    Detects ONE or MANY composantes from a user question.
-    Returns canonical composante names used in ROW_ANCHORS.
-    """
+        cls._client = None
 
-    q = normalize_text(question)
+##### Retrieve context from LangChain
+async def get_context_from_langchain_rag(
+    action_label,
+    native_question,
+    domains,
+    grades,
+    nbr_chunks
+):
+    try:
+        client = HttpClientManager.get_client()
 
-    # 🔒 Canonical composantes (MUST match ROW_ANCHORS keys)
-    COMPOSANTE_KEYWORDS = {
-        "production rdi": ["production rdi", "prod rdi", "rdi"],
-        "dossier": ["dossier", "pj", "pièces jointes", "pieces jointes"],
-        "entretien avec le jury": ["entretien", "jury", "entretien avec le jury"],
-        "sequence d'enseignement": ["séquence", "sequence d'enseignement", "sequence d enseignement", "sequence enseignement"],
-        "supports pedagogiques": ["supports", "support"],
-        "capsules pedagogiques": ["capsules", "capsule"],
-        "dissertations": ["dissertations", "dissertation"]
+        response = await client.post(
+            f"{LANG_CHAIN_URL}/rag/context",
+            headers={
+                "X-Service-Token": settings.RASA_RAG_TOKEN
+            },
+            json={
+                "question": native_question,
+                "domains": domains,
+                "grades": grades,
+                "nbr_chunks": nbr_chunks,
+            },
+        )
+
+        if is_no_context_response(response):
+            log_info_text(
+                action_label,
+                "RAG: no relevant context found"
+            )
+            return "NO_CONTEXT_FILENAME", ""
+
+        response.raise_for_status()
+        data = response.json()
+
+        if not isinstance(data, dict) or not isinstance(data.get("context"), str):
+            raise ValueError("RAG service returned an unexpected response")
+
+        if not data["context"].strip():
+            raise ValueError("RAG service returned empty context")
+
+        context = data.get("context") or ""
+        filename = data.get("source_file") or "unknown"
+
+        log_info_text(action_label, f"domains: {domains}")
+        log_info_text(action_label, f"grades: {grades}")
+        log_info_text(action_label, f"filename: {filename}")
+        log_info_text(action_label, f"nbr_chunks: {nbr_chunks}")
+
+        return filename, context
+
+    except (httpx.HTTPError, ValueError) as exc:
+
+        response = getattr(exc, "response", None)
+        status_code = getattr(response, "status_code", None)
+
+        payload = get_payload_rasa_rag_service()
+        payload["botReply"] = "RAG context retrieval failed"
+
+        await notify_team_leader_by_technical_problem(payload)
+
+        log_exception_text(
+            action_label,
+            f"Failed to retrieve RAG context: {status_code} - {exc}",
+        )
+
+        raise RAGServiceUnavailable(
+            "RAG context retrieval failed"
+        ) from exc
+
+def get_payload_rasa_rag_service():
+    return {
+        "userId": None,
+        "sessionId": None,
+        "userInput": None,
+        "rasaIntent": str(ActiveIntents.NLU_FALLBACK.value),
+        "confidence": 1,
+        "messageExchangeDate": datetime.now(timezone.utc).isoformat()
     }
 
-    detected = []
+def is_no_context_response(response: httpx.Response) -> bool:
+    """True only for the RAG service's explicit 'nothing relevant found' 404."""
+    if response.status_code != 404:
+        return False
+    try:
+        body = response.json()
+    except ValueError:
+        return False
+    # Checking `detail` avoids hiding a real 404 (wrong URL, wrong route).
+    return isinstance(body, dict) and body.get("detail") == "no_relevant_context"
 
-    for composante, keywords in COMPOSANTE_KEYWORDS.items():
-        for kw in keywords:
-            # strict word boundary to avoid noise
-            if re.search(rf"\b{re.escape(kw)}\b", q):
-                detected.append(composante)
-                break
 
-    # preserve order of appearance in question
-    detected_sorted = sorted(
-        detected,
-        key=lambda c: q.find(
-            next(
-                key_word for key_word in COMPOSANTE_KEYWORDS[c] if key_word in q
-            )
-        )
-    )
+##### Get Synonyms Lookup
+def get_synonyms_lookup(action_label, entities):
+    entity_slot_mapping = load_entity_slot_mapping("domain.yml", entities)
+    synonyms_lookup = load_synonyms_grouped_by_entity(find_conf_file_path(action_label, "data", "nlu.yml"), entities, entity_slot_mapping)
+    return synonyms_lookup
 
-    return detected_sorted
-
-def get_file_path(intent, intent_map, fallback_intent):
-    return intent_map.get(intent, fallback_intent)
-
-def show_prompt(action_label, prompt):
-    log_info_text("", "\n1 🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺")
-    log_info_text(action_label, prompt)
-    log_info_text("", "2🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺🔺\n")
-
-def load_synonyms_grouped_by_entity(
-    nlu_file_path,
-    requested_entities,
-    entity_slot_mapping
-):
+def load_synonyms_grouped_by_entity(nlu_file_path, requested_entities, entity_slot_mapping):
     """
     entity_slot_mapping example:
     {
@@ -169,6 +191,22 @@ def load_synonyms_grouped_by_entity(
 
     return grouped_synonyms
 
+def load_entity_slot_mapping(domain_path: str, required_slots: list):
+    with open(domain_path, "r", encoding="utf-8") as f:
+        domain = yaml.safe_load(f)
+
+    slots = domain.get("slots", {})
+
+    entity_slot_mapping = {}
+
+    for slot_name, slot_data in slots.items():
+        if slot_name in required_slots:
+            if slot_data.get("type") == "categorical":
+                entity_slot_mapping[slot_name] = slot_data.get("values", [])
+
+    # log_info_text(action_label, "ESSID - ENTITIES" + str(entity_slot_mapping))
+    return entity_slot_mapping
+
 def find_conf_file_path(action_label, folder_label, file_name):
     # 1. On part de l'emplacement du fichier actuel (llm_helpers.py)
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -193,6 +231,9 @@ def find_conf_file_path(action_label, folder_label, file_name):
 
     log_info_text(action_label, "ESSID path" + file_path)
     return file_path
+
+
+##### Rewrite question using slots
 
 def rewrite_using_slots_prod_grade(native_question, detected_slots, synonyms_lookup, canonical_mapping):
 
@@ -242,128 +283,7 @@ def find_entity_for_slot(slot, synonyms_lookup):
 
     return None
 
-def load_entity_slot_mapping(domain_path: str, required_slots: list):
-    with open(domain_path, "r", encoding="utf-8") as f:
-        domain = yaml.safe_load(f)
-
-    slots = domain.get("slots", {})
-
-    entity_slot_mapping = {}
-
-    for slot_name, slot_data in slots.items():
-        if slot_name in required_slots:
-            if slot_data.get("type") == "categorical":
-                entity_slot_mapping[slot_name] = slot_data.get("values", [])
-
-    # log_info_text(action_label, "ESSID - ENTITIES" + str(entity_slot_mapping))
-    return entity_slot_mapping
-
-def get_synonyms_lookup(action_label, entities):
-    entity_slot_mapping = load_entity_slot_mapping("domain.yml", entities)
-    synonyms_lookup = load_synonyms_grouped_by_entity(find_conf_file_path(action_label, "data", "nlu.yml"), entities, entity_slot_mapping)
-    return synonyms_lookup
-
-def get_clean_slot_values(question, synonyms_dict):
-
-    detected_values = []
-    remaining_text = normalize_text(question.lower())
-    log_info_text("🔥 🔥   remaining_text: ", f"{remaining_text}")
-
-    syn_pairs = []
-
-    for canonical, examples in synonyms_dict.items():
-        for ex in examples:
-            syn_pairs.append((ex.lower().strip(), canonical))
-
-    # Crucial : Trier par longueur décroissante pour attraper "Assistant Technologue" avant "Technologue"
-    syn_pairs.sort(key=lambda x: len(x[0]), reverse=True)
-
-    for synonym, canonical in syn_pairs:
-        pattern = rf"\b{re.escape(synonym)}\b"
-
-        if re.search(pattern, remaining_text):
-            log_info_text("🔥 🔥   pattern: ", f"{pattern} - {canonical}")
-            detected_values.append(canonical)
-
-            # 🔥 VERY IMPORTANT
-            remaining_text = re.sub(pattern, " ", remaining_text)
-
-    return list(set(detected_values))
-
-def get_grade_speciality_values(question, synonyms_lookup):
-    grade_entity_values = get_clean_slot_values(question, synonyms_lookup["grade"])
-    speciality_entity_values = get_clean_slot_values(question, synonyms_lookup["speciality"])
-
-    return grade_entity_values, speciality_entity_values
-
-def get_sscomp_values(question, synonyms_lookup):
-    sscomp_entity_values = get_clean_slot_values(question, synonyms_lookup["sscomp"]) # SYNONYMS_LOOKUP["session"]
-    return sscomp_entity_values
-
-async def get_context_from_langchain_rag(
-    action_label, native_question, domains, grades, nbr_chunks
-):
-    try:
-        timeout = httpx.Timeout(60.0, connect=5.0)
-
-        async with httpx.AsyncClient(timeout=timeout) as client:
-            response = await client.post(
-                f"{LANG_CHAIN_URL}/rag/context",
-                headers={"X-Service-Token": settings.RASA_RAG_TOKEN},
-                json={
-                    "question": native_question,
-                    "domains": domains,
-                    "grades": grades,
-                    "nbr_chunks": nbr_chunks,
-                },
-            )
-
-            if _is_no_context_response(response):  # NEW
-                log_info_text(action_label, "RAG: no relevant context found")
-                return "NO_CONTEXT_FILENAME", ""
-
-            response.raise_for_status()
-            data = response.json()
-
-        if not isinstance(data, dict) or not isinstance(data.get("answer"), str):
-            raise ValueError("RAG service returned an unexpected response")
-
-        if not data["answer"].strip():
-            raise ValueError("RAG service returned empty context")
-        context = data.get("answer") or ""
-        filename = data.get("source_file") or "unknown"
-
-        log_info_text(action_label, f"domains: {domains}")
-        log_info_text(action_label, f"grades: {grades}")
-        log_info_text(action_label, f"filename: {filename}")
-        log_info_text(action_label, f"nbr_chunks: {nbr_chunks}")
-
-        return filename, context
-
-    except (httpx.HTTPError, ValueError) as exc:
-        response = getattr(exc, "response", None)
-        status_code = getattr(response, "status_code", None)
-
-        payload = get_payload_rasa_rag_service()
-        payload["botReply"] = "RAG context retrieval failed"
-        await notify_team_leader_by_technical_problem(payload)
-        log_exception_text(
-            action_label,
-            f"Failed to retrieve RAG context: {status_code} - {exc}",
-        )
-
-        raise RAGServiceUnavailable("RAG context retrieval failed") from exc
-
-def _is_no_context_response(response: httpx.Response) -> bool:  # NEW
-    """True only for the RAG service's explicit 'nothing relevant found' 404."""
-    if response.status_code != 404:
-        return False
-    try:
-        body = response.json()
-    except ValueError:
-        return False
-    # Checking `detail` avoids hiding a real 404 (wrong URL, wrong route).
-    return isinstance(body, dict) and body.get("detail") == "no_relevant_context"
+##################################################
 
 async def get_filename_context_prompt(action_label, last_last_user_question, last_answer, full_history, maintained_intent):
     full_history = f"""{full_history.strip()}"""
@@ -392,82 +312,42 @@ async def get_filename_context_prompt(action_label, last_last_user_question, las
 
     return filename, context, prompt
 
-def exist_pronoun(last_second_question, question):
-    muted_words = ["greet", "bye"]
+def get_grade_speciality_values(question, synonyms_lookup):
+    grade_entity_values = get_clean_slot_values(question, synonyms_lookup["grade"])
+    speciality_entity_values = get_clean_slot_values(question, synonyms_lookup["speciality"])
 
-    log_info_text("PLAN-1 : ", str(normalize_text(question)) + " - " + str(len(question.split())))
+    return grade_entity_values, speciality_entity_values
 
-    is_excluded = None
-    if check_is_excluded(question):
-        is_excluded = True
-        # is_pron_in_qe = False   1. donner la mission pour efm | 2. est ce que cet enseignant peut postuler pour un autre grade
+def get_clean_slot_values(question, synonyms_dict):
 
-    no_muted_words_found = last_second_question is not None and all(
-        word.lower() not in last_second_question.lower()
-        for word in muted_words
-    )
+    detected_values = []
+    remaining_text = normalize_text(question.lower())
+    log_info_text("🔥 🔥   remaining_text: ", f"{remaining_text}")
 
-    qe_without_excluded = remove_excluded_patterns(question)
-    log_info_text("PLAN-3 : ", qe_without_excluded)
-    is_started_with_kw = is_started_with_keyword(normalize_text(qe_without_excluded))
+    syn_pairs = []
 
-    log_info_text("PLAN-1 is_pron_in_qe : ", str(is_started_with_kw))
+    for canonical, examples in synonyms_dict.items():
+        for ex in examples:
+            syn_pairs.append((ex.lower().strip(), canonical))
 
-    return is_excluded, is_started_with_kw, no_muted_words_found
+    # Crucial : Trier par longueur décroissante pour attraper "Assistant Technologue" avant "Technologue"
+    syn_pairs.sort(key=lambda x: len(x[0]), reverse=True)
 
-def skip_duplication(self, tracker, action_label):
-    last_intent = tracker.get_slot("last_intent")
-    active_flow = tracker.get_slot("active_flow")
+    for synonym, canonical in syn_pairs:
+        pattern = rf"\b{re.escape(synonym)}\b"
 
-    log_info_text(action_label, f"COMPARE : {tracker.latest_action_name} - {self.name()}")
-    if tracker.latest_action_name in ActionsLabel.SKIPPED_ACTIONS_FROM_LANG_CHAIN or tracker.latest_action_name == self.name():
-        log_info_text(action_label, f"{BOT_MESSAGES.get('skip_duplication')} - {action_label}")
+        if re.search(pattern, remaining_text):
+            log_info_text("🔥 🔥   pattern: ", f"{pattern} - {canonical}")
+            detected_values.append(canonical)
 
-        # Capture the slots to be set
-        slots_to_set = get_return_slots_for_conversations(
-            get_slots_to_set_last_answer_flow(active_flow, tracker.get_slot("last_answer"))
-        )
+            # 🔥 VERY IMPORTANT
+            remaining_text = re.sub(pattern, " ", remaining_text)
 
-        # Return a 3-tuple, perhaps using None for the unused variables
-        # or wrapping your slots to be processed later
-        return None, slots_to_set
+    return list(set(detected_values))
 
-    return last_intent, active_flow
-
-def skip_unrelated_action(self, tracker, action_label, intent):
-    last_intent = tracker.get_slot("last_intent") or None
-    active_flow = tracker.get_slot("active_flow") or None
-    exist_class = None
-
-    if last_intent:
-        log_info_text(action_label, DIRECT_HAND_FLAG + last_intent)
-    log_info_text(action_label, DIRECT_HAND_FLAG + intent)
-
-    if tracker.latest_action_name == self.name() or (intent == last_intent and intent not in ActiveIntents.ALL_LLM_INTENTS_LANG_CHAIN) or (intent == ActiveIntents.NLU_FALLBACK.value and last_intent not in ActiveIntents.ALL_LLM_INTENTS_LANG_CHAIN and last_intent not in ActiveIntents.RESULTS_INTENTS):  # or (intent not in ActiveIntents.ALL_LLM_INTENTS_LANG_CHAIN)
-        log_info_text(action_label, f"{BOT_MESSAGES.get('skip_unrelated_action')} - {action_label}")
-        exist_class = True
-        return exist_class, last_intent, active_flow
-
-    return exist_class, last_intent, active_flow
-
-def mapping_old_new_grades(original_grades):
-
-    MAPPING_OLD_NEW_GRADES = {
-        'tech': 'ef',
-        'maitre_tech': 'efs',
-        'assistant_tech': 'efa',
-        'professeur_tech': 'efm'
-    }
-
-    # Use a list comprehension to transform the list
-    # .get(item, item) ensures that if a value isn't in the mapping, it stays as is
-
-    log_info_text("OLD grades : ", original_grades)
-    grades = original_grades
-    if original_grades:
-        grades = [MAPPING_OLD_NEW_GRADES.get(slot, slot) for slot in original_grades]
-
-    return grades
+def get_sscomp_values(question, synonyms_lookup):
+    sscomp_entity_values = get_clean_slot_values(question, synonyms_lookup["sscomp"]) # SYNONYMS_LOOKUP["session"]
+    return sscomp_entity_values
 
 def get_util_values(intent, active_flow, sscomp_entity_values, native_question, domains, nbr_chunks):
 
@@ -519,107 +399,3 @@ def get_util_values(intent, active_flow, sscomp_entity_values, native_question, 
         domains = ["saria"]
 
     return native_question, domains, nbr_chunks
-
-def get_payload_rasa_rag_service():
-    return {
-        "userId": None,
-        "sessionId": None,
-        "userInput": None,
-        "rasaIntent": str(ActiveIntents.NLU_FALLBACK.value),
-        "confidence": 1,
-        "messageExchangeDate": datetime.now(timezone.utc).isoformat()
-    }
-
-def track_prompt_decision_params(action_label, prompt, decision_infos):
-    log_info_text(action_label, "🎯 prompting : " + prompt)
-    log_info_text(f"{DIRECT_HAND_FLAG}", f"{action_label}: \n")
-    if decision_infos:
-        log_info_text("👉  ROUTING SCORE: ", f"{decision_infos.score} => {decision_infos.mode}")
-        for key, value in decision_infos.reasons.items():
-            log_info_text(f"-  {key} ", f"{value}")
-
-    log_info_text(action_label, "\n")
-
-def compute_similarity(current_q: str, last_q: str) -> float:
-    # Guard clause: if inputs are missing, return 0.0 immediately
-    if not current_q or not last_q:
-        return 0.0
-
-    try:
-        return is_followup(current_q, last_q)
-    except (ValueError, TypeError, AttributeError) as e:
-        # Catch specific errors related to string processing or math
-        log_info_text("EXCEPTION : ", str(e))
-        return 0.0
-
-async def get_decision_mode(self, dispatcher, tracker, action_label, native_question, last_second_question, intent, last_intent) :
-
-    last_user_response = tracker.get_slot("last_answer")
-    detector = FollowUpDetector()
-    signals = signal_extract(native_question, last_second_question)
-    similarity = compute_similarity(native_question, last_second_question)
-
-    is_pron_det = check_pronoun_det(native_question)
-
-    is_dead_end = None
-    is_blocked_pattern = check_is_blocked_pattern(native_question)
-    if is_blocked_pattern:
-        log_info_text("last_user_response : ",last_user_response)
-        log_info_text("B L O C K E D   P A T T E R N : ", str(is_blocked_pattern))
-        is_dead_end = await check_is_dead_end(self, dispatcher, action_label, last_second_question, last_user_response, native_question)
-        log_info_text("RESULT : ", str(is_dead_end))
-
-    is_more_det = check_more_details(native_question)
-
-    log_info_text("is_pron_detis_pron_det : ", str(is_pron_det))
-    decision = detector.compute_score(
-        similarity=similarity,
-        is_started_with_kw=signals["is_started_with_kw"],
-        intent=intent,
-        last_intent=last_intent,
-        pron_det=is_pron_det,
-        is_dead_end=is_dead_end,
-        is_more_det = is_more_det,
-        muted_intents=cast(List[str], ActiveIntents.MUTED_INTENTS)
-    )
-
-    log_info_text(f"{DIRECT_HAND_FLAG}", f"{action_label} - ROUTING SCORE: {decision.score}")
-    log_info_text(f"{DIRECT_HAND_FLAG}", f"{action_label} - ROUTING MODE: {decision.mode}")
-    log_info_text(f"{DIRECT_HAND_FLAG}", f"{action_label} - ROUTING REASONS: {decision.reasons}")
-
-    return decision
-
-def signal_extract(question: str, last_question: str):
-
-    is_excluded, is_started_with_kw, no_muted = exist_pronoun(last_question, question)
-
-    return {
-        "is_started_with_kw": bool(is_started_with_kw),
-        "is_excluded": bool(is_excluded),
-        "no_muted": no_muted
-    }
-
-
-async def check_is_dead_end(self, dispatcher, action_label, last_question, last_response, current_question):
-
-    prompt = check_is_dead_end_prompt(last_question, last_response, current_question)
-
-    log_info_text("DEAD END - 1 : ", prompt)
-    answer = await self.call_llm_safe(
-        dispatcher=dispatcher,
-        prompt=prompt,
-        action_label=action_label,
-        payload_tech_error=None
-    )
-    log_info_text("🎯 DEAD END - 2 : ", answer)
-
-    return answer
-
-def get_academic_stuff_rules():
-    return """\n
-- Groupe de **Spécilités Techniques** : Technologie de l'information, Électromécanique, Génie Civil, Génie énergétique, Mathématique
-- Groupe de **Spécialité de Langues** : Langues et Communications
-
-- ❌ Un candidat du **Groupe 1 (spécialités techniques)** ne peut **jamais postuler** pour un grade du **Groupe 2**.
-- ❌ Un candidat du **Groupe 2 (Langues et Communication)** ne peut **jamais postuler** pour un grade du **Groupe 1**
-"""
