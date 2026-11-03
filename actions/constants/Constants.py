@@ -205,7 +205,7 @@ SE_PTP_SSCOMP = "Séquence d'Enseignement OU Plateforme de TP"
 
 # SESSIONS
 Y2425_SESSION = "session de passage de grade 2024-2025"
-Y2526_SESSION = "session de passage de grade 2025-2026"
+Y2526_SESSION = f"session de passage de grade {settings.ACTIVE_SESSION}"
 
 # HELPERS
 FLAG_ALERT = "🚩 🚩 🚩 🚩 🚩 🚩 🚩 🚩"

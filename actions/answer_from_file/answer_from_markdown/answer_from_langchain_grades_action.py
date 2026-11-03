@@ -20,7 +20,7 @@ from actions.answer_from_file.bot_missions import get_extended_bot_mission, \
     get_detailed_standard_full_last_conv_bot_mission_with_context, \
     fusion_question
 from actions.answer_from_file.data_classes import MyConversationContextSlots
-from actions.answer_from_file.follow_up.retrieve_decision_mode import get_decision_mode
+from actions.answer_from_file.follow_up.retrieve_decision_mode import get_decision_infos
 from actions.answer_from_file.llm_helpers import rewrite_using_slots_prod_grade, get_synonyms_lookup, \
     get_grade_speciality_values, \
     get_sscomp_values, get_context_from_langchain_rag, get_util_values
@@ -66,8 +66,8 @@ class ActionAcademicStuff(BaseDynamicLLMAction):
 
             log_info_text("SUMMARY : ", f"{action_label} - {native_question} - {str(detected_slots)} - {str(entities)}")
 
-            decision_infos = await get_decision_mode(self, dispatcher, tracker, action_label, native_question,
-                                                     last_second_question, intent, last_intent)
+            decision_infos = await get_decision_infos(self, dispatcher, tracker, action_label, native_question,
+                                                      last_second_question, intent, last_intent)
             decision_mode = decision_infos.mode
             if decision_mode == "detailed":
                 log_info_text(f"{DIRECT_HAND_LONG}", f"{GO_DETAILS}")

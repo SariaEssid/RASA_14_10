@@ -21,7 +21,7 @@ from actions.answer_from_file.answer_from_file_actions import BaseDynamicLLMActi
 from actions.answer_from_file.bot_missions import get_bot_neutral_header_mission, analyse_last_discussion, \
     get_standard_bot_mission_with_alerts, get_detailed_standard_full_last_conv_bot_mission_with_context_alerts
 from actions.answer_from_file.data_classes import MyConversationContext
-from actions.answer_from_file.follow_up.retrieve_decision_mode import get_decision_mode
+from actions.answer_from_file.follow_up.retrieve_decision_mode import get_decision_infos
 from actions.answer_from_file.llm_helpers import get_synonyms_lookup, rewrite_using_slots_prod_grade
 from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.ActionsNome import ActionsNome
@@ -56,7 +56,7 @@ class ActionGetResponseFromJSON(BaseDynamicLLMAction):
             question = rewrite_using_slots_prod_grade(native_question, detected_slots, synonyms_lookup, ALL_ENTITIES_MAPPINGS)
             slot_speciality_value, slot_grade_value, slot_session_value, slot_sscomp_value, slot_expert_value = get_extracted_slots(action_label, tracker)
 
-            decision_infos = await get_decision_mode(self, dispatcher, tracker, action_label, native_question, last_second_question, intent, last_intent)
+            decision_infos = await get_decision_infos(self, dispatcher, tracker, action_label, native_question, last_second_question, intent, last_intent)
             decision_mode = decision_infos.mode
 
             if decision_mode == "detailed":

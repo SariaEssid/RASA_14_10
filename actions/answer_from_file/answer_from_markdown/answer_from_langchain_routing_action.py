@@ -22,7 +22,7 @@ from actions.answer_from_file.bot_missions import get_standard_bot_mission, \
     get_extended_bot_mission_without_duplication, get_extended_bot_mission_with_alerts_with_roles, \
     give_link_label
 from actions.answer_from_file.data_classes import RequiredValuesShortAnswers
-from actions.answer_from_file.follow_up.retrieve_decision_mode import get_decision_mode
+from actions.answer_from_file.follow_up.retrieve_decision_mode import get_decision_infos
 from actions.answer_from_file.llm_helpers import rewrite_using_slots_prod_grade, get_synonyms_lookup, \
     get_grade_speciality_values, \
     get_sscomp_values, get_context_from_langchain_rag, get_filename_context_prompt, get_util_values
@@ -96,8 +96,8 @@ class ActionLangChainRouting(BaseDynamicLLMAction):
             if last_second_question:
                 log_info_text(action_label, "INSIDE last_second_question : " + last_second_question)
 
-                decision_infos = await get_decision_mode(self, dispatcher, tracker, action_label, native_question,
-                                                         last_second_question, intent, last_intent)
+                decision_infos = await get_decision_infos(self, dispatcher, tracker, action_label, native_question,
+                                                          last_second_question, intent, last_intent)
                 decision_mode = decision_infos.mode
 
             if decision_mode == "detailed":
@@ -204,6 +204,7 @@ async def get_short_answers(ctx: RequiredValuesShortAnswers):
             prompt = get_extended_bot_mission_without_duplication(question, context)
     else:
         prompt = get_standard_bot_mission(question, context)
+
 
     return prompt, filename
 

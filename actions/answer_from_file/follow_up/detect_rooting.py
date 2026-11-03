@@ -3,19 +3,16 @@ actions/answer_from_file/follow_up/detect_rooting.py
 
 @author ESSID Saria | Copyright (c) 2025. ESPRIT
 """
-import re
 from typing import List
 
 import spacy
 
-from actions.actions import normalize_text
 from actions.answer_from_file.data_classes import RoutingDecision
 from actions.constants.ActiveIntents import ActiveIntents
 from actions.constants.Constants import DIRECT_HAND_FLAG
 from actions.logging.logging_helpers import log_info_text
 from actions.settings.settings import settings
 
-nlp = spacy.load("fr_core_news_sm")
 
 # 1. Mots qui provoquent une dépendance ABSOLUE à l'historique (Possessifs / Démonstratifs)
 STRICT_DEPENDENT_WORDS = {"son", "ses", "sa", "leur", "leurs", "ce", "cet", "cette", "ces"}

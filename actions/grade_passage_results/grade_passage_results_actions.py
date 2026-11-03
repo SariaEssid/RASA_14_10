@@ -411,4 +411,3 @@ def get_bilan_header(full_name, applied_grade, moyenne_totale, score_totale):
         f"💯 **Score Total : {moyenne_totale} / {score_totale}**",
         ""
     ]
-

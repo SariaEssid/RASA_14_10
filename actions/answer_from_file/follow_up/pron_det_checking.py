@@ -5,13 +5,9 @@ actions/answer_from_file/follow_up/detect_rooting.py
 """
 import re
 
-import spacy
 import unicodedata
 
-try:
-    nlp = spacy.load("fr_core_news_sm")
-except OSError:
-    raise ImportError("Veuillez installer le modèle français : python -m spacy download fr_core_news_sm")
+from core.nlp import get_nlp
 
 # 1. Déterminants & démonstratifs dépendant de l'historique
 POSSESSIVES = {
@@ -42,6 +38,8 @@ IMPERSONAL_PATTERNS = {"s'agit il", "s'agit-il", "il s'agit", "s agit il"}
 
 
 def check_pronoun_det(text: str) -> bool:
+    nlp = get_nlp()
+
     normalized_text = normalize_text(text)
     doc = nlp(normalized_text)
     words = [t.text for t in doc]

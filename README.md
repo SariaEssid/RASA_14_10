@@ -53,6 +53,10 @@ When a question does not match the FAQ similarity threshold, the conversation is
 
 ### Out-of-scope and missing-context behavior
 
+Semantic FAISS threshold is your relevance decision mechanism:
+- Similarity score satisfies the threshold → RELATED → continue with the appropriate response route.
+- Similarity score does not satisfy the threshold → UNRELATED → invoke solo_feedback().
+
 The fallback prompt includes instructions from `solo_feedback()`.
 When a question is unrelated to PGPG, ESPRIT, or DSI—or when the RAG context is empty—the LLM is instructed to explain the chatbot’s scope.
 It may provide general information when appropriate, clearly marked as general rather than official PGPG information.

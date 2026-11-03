@@ -14,7 +14,8 @@ from rasa_sdk.executor import CollectingDispatcher
 
 from actions.actions import append_friendly_intro_to_answer, get_local_header
 from actions.answer_from_file.answer_from_file_actions import BaseDynamicLLMAction, load_util_values
-from actions.answer_from_file.bot_missions import get_fallback_bot_mission_with_context
+from actions.answer_from_file.bot_missions import get_fallback_bot_mission_with_context, \
+    get_fallback_bot_mission_without_context
 from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.ActionsNome import ActionsNome
 from actions.constants.ActiveIntents import ActiveIntents
@@ -56,7 +57,7 @@ class ActionMaintainConversationFlow(BaseDynamicLLMAction):
 
             log_info_text(action_label, "C - LOL123 - native_question : " + native_question)
 
-            prompt = get_fallback_bot_mission_with_context(None, native_question, last_last_user_question, last_answer)
+            prompt = get_fallback_bot_mission_without_context(native_question, last_last_user_question, last_answer)
             show_prompt(action_label, prompt)
 
             answer = await self.call_llm_safe(

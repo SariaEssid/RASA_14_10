@@ -90,7 +90,7 @@ async def get_context_from_langchain_rag(
         if not data["context"].strip():
             raise ValueError("RAG service returned empty context")
 
-        context = data.get("context") or ""
+        context = data.get("context") or None
         filename = data.get("source_file") or "unknown"
 
         log_info_text(action_label, f"domains: {domains}")

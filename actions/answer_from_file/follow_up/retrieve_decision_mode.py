@@ -23,7 +23,7 @@ class RAGServiceUnavailable(Exception):
     pass
 
 ##################################################
-async def get_decision_mode(self, dispatcher, tracker, action_label, native_question, last_second_question, intent, last_intent) :
+async def get_decision_infos(self, dispatcher, tracker, action_label, native_question, last_second_question, intent, last_intent) :
 
     last_user_response = tracker.get_slot("last_answer")
     detector = FollowUpDetector()
@@ -59,6 +59,9 @@ async def get_decision_mode(self, dispatcher, tracker, action_label, native_ques
     log_info_text(f"{DIRECT_HAND_FLAG}", f"{action_label} - ROUTING REASONS: {decision.reasons}")
 
     return decision
+
+async def get_decision_mode(*args, **kwargs):
+    return (await get_decision_infos(*args, **kwargs)).mode
 
 async def check_is_dead_end(self, dispatcher, action_label, last_question, last_response, current_question):
 

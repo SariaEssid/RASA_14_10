@@ -23,7 +23,7 @@ from actions.answer_from_file.answer_from_markdown.experts_rag.markdown_store im
     retrieve_sections_with_table_dynamic_bb
 from actions.answer_from_file.bot_missions import get_standard_bot_mission, \
     get_neutral_bot_mission, get_extended_bot_mission, get_detailed_standard_full_last_conv_bot_mission_with_context
-from actions.answer_from_file.follow_up.retrieve_decision_mode import get_decision_mode
+from actions.answer_from_file.follow_up.retrieve_decision_mode import get_decision_infos
 from actions.answer_from_file.llm_helpers import rewrite_using_slots_prod_grade, get_synonyms_lookup, get_context_from_langchain_rag, get_filename_context_prompt, get_clean_slot_values
 from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.ActionsNome import ActionsNome
@@ -96,8 +96,8 @@ class ActionEvaluatorsAndPJ(BaseDynamicLLMAction):
                 tag = "OTHER"
                 log_info_text(action_label, tag)
 
-            decision_infos = await get_decision_mode(self, dispatcher, tracker, action_label, native_question,
-                                                     last_second_question, intent, last_intent)
+            decision_infos = await get_decision_infos(self, dispatcher, tracker, action_label, native_question,
+                                                      last_second_question, intent, last_intent)
             decision_mode = decision_infos.mode
 
             if decision_mode == 'detailed' and intent == ActiveIntents.NLU_FALLBACK.value:

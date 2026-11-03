@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     # RASA-RAG Service
     # -------------------------
     RASA_RAG_TOKEN = os.getenv("RASA_RAG_TOKEN")
-    RAG_DEFAULT_CHUNKS: int = os.getenv("RAG_DEFAULT_CHUNKS")
+    RAG_DEFAULT_CHUNKS: int
     EXPERT_TABLE_TOP_K: int = os.getenv("EXPERT_TABLE_TOP_K")
     RASA_TO_SPRING_TOKEN = os.getenv("RASA_TO_SPRING_TOKEN")
 
@@ -119,7 +119,7 @@ class Settings(BaseSettings):
 
     # semantic_model_name: str = "all-MiniLM-L6-v2"  # BEFORE
     semantic_model_name = "./models/semantic_model"  # AFTER
-    HF_HUB_OFFLINE: int = os.getenv("HF_HUB_OFFLINE") == "1"
+    HF_HUB_OFFLINE: int = os.getenv("HF_HUB_OFFLINE") == 1
 
     ACTIVE_SESSION: str = "2025-2026"
 

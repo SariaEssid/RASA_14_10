@@ -3,6 +3,7 @@ actions/semantic/semantic_actions.py
 
 @author ESSID Saria | Copyright (c) 2025. ESPRIT
 """
+
 import re
 from typing import Text, Dict, Any, Union, Coroutine
 
@@ -13,7 +14,7 @@ from rasa_sdk.executor import CollectingDispatcher
 
 from actions.actions import normalize_text, is_followup, track_prompt_decision_params
 from actions.answer_from_file.answer_from_file_actions import BaseDynamicLLMAction
-from actions.answer_from_file.follow_up.retrieve_decision_mode import get_decision_mode
+from actions.answer_from_file.follow_up.retrieve_decision_mode import get_decision_infos, get_decision_mode
 from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.ActionsNome import ActionsNome
 from actions.constants.Constants import BOT_MESSAGES, FEEDBACK_BUTTONS, DIRECT_HAND_FLAG
@@ -61,10 +62,8 @@ class ActionSemanticQA(BaseDynamicLLMAction):
             return []
 
         last_intent, intent, active_flow, last_user_question, last_user_response = get_semantic_values(tracker)
-        decision_infos = await get_decision_mode(self, dispatcher, tracker, action_label, question, last_user_question, intent, last_intent)
-        track_prompt_decision_params(action_label, "prompt", decision_infos)
+        decision_mode = await get_decision_mode(self, dispatcher, tracker, action_label, question, last_user_question, intent, last_intent)
 
-        decision_mode = decision_infos.mode
         if decision_mode == "detailed":
             get_util_values_with_log(tracker, action_label)
             answer = await follow_up_semantic(self, dispatcher, tracker, question, predicted_intent, domain)
@@ -199,7 +198,7 @@ async def follow_up_semantic(self, dispatcher, tracker, question, predicted_inte
     followup = is_followup(question, last_user_question)
     # Detect follow-up option based on keywords
 
-    decision_infos = await get_decision_mode(self, dispatcher, tracker, action_label, question, last_user_question, intent, last_intent)
+    decision_infos = await get_decision_infos(self, dispatcher, tracker, action_label, question, last_user_question, intent, last_intent)
     decision_mode = decision_infos.mode
 
     track_prompt_decision_params(action_label, "prompt", decision_infos)

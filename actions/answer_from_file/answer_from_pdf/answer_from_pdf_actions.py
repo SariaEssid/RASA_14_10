@@ -23,7 +23,7 @@ from actions.answer_from_file.answer_from_markdown.answer_from_langchain_grades_
 from actions.answer_from_file.answer_from_pdf.pdf_rag_pdf import retrieve_context_pdf
 from actions.answer_from_file.bot_missions import get_standard_bot_mission, \
     get_detailed_standard_full_last_conv_bot_mission_with_context
-from actions.answer_from_file.follow_up.retrieve_decision_mode import get_decision_mode
+from actions.answer_from_file.follow_up.retrieve_decision_mode import get_decision_infos
 from actions.answer_from_file.llm_helpers import rewrite_using_slots_prod_grade, get_synonyms_lookup
 from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.ActionsNome import ActionsNome
@@ -78,7 +78,7 @@ class ActionPGInfosFromPDF(BaseDynamicLLMAction):
             if last_second_question:
                 log_info_text(action_label, "INSIDE last_second_question : " + last_second_question)
 
-                decision_infos = await get_decision_mode(self, dispatcher, tracker, action_label, native_question, last_second_question, intent, last_intent)
+                decision_infos = await get_decision_infos(self, dispatcher, tracker, action_label, native_question, last_second_question, intent, last_intent)
                 decision_mode = decision_infos.mode
 
             if decision_mode == "detailed":
