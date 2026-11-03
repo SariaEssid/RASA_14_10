@@ -208,7 +208,6 @@ FAITES ATTENTION : NE JAMAIS OUBLIER : STRICTEMENT INTERDIT :
 - Va droit au but
 - Juste une SEULE explication
 - Ne jamais poser des questions
-- Ne jamais inventer et donner des exemples hors contexte
 - Ne jamais donner des réponses sous forme de tableaux
 - Répondre uniquement par la réponse finale destinée au candidat.
 - Ne jamais mentionner que tu respecte les règles.
