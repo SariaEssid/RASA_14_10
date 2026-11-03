@@ -197,7 +197,12 @@ Question Utilisateur: "{question}"
 """
 
 def limit_bot():
-    return """en t'adressant directement à l'utilisateur et en utilisant EXCLUSIVEMENT le contexte fourni ci_dessous (sans salutation :pas de 'Bonjour', 'Cordialement' et sans analyser la question et écrire des algorithmes.) :"""
+    return """
+Adresse-toi directement à l'utilisateur, sans salutation ni commentaire sur ton propre comportement.
+
+- Si un contexte documentaire pertinent est fourni, réponds uniquement avec les faits étayés par ce contexte.
+- Si aucun contexte pertinent n'est fourni, suis les instructions de gestion des questions hors périmètre : explique le périmètre du bot et, si approprié, donne une réponse générale clairement présentée comme non officielle.
+"""
 
 def prevent_duplication_instructions():
     return f"""⛔ RÉGLES STRICTES : 
