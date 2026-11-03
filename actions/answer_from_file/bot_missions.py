@@ -222,20 +222,15 @@ FAITES ATTENTION : NE JAMAIS OUBLIER : STRICTEMENT INTERDIT :
 - Si le problème persiste après ces vérifications, l'informer qu'il doit contacter le support technique de la DSI pour obtenir une assistance complémentaire.
 - Ne rediriger vers le support technique qu'après avoir proposé les vérifications et solutions de premier niveau"""
 
-def prevent_duplication():
-    return f"""
-{prevent_duplication_instructions()}
-{solo_feedback()}"""
-
 def rag_grounding_instructions(context=None) -> str:
     """Grounding rules when context exists; scope rules when it does not."""
     if not (context and str(context).strip()):
         return f"""
-{prevent_duplication_instructions()}
-{solo_feedback()}"""
+{prevent_duplication_instructions()}"""
 
     return f"""
 {prevent_duplication_instructions()}
+⛔ RÈGLES DE FIABILITÉ POUR LE CONTEXTE RAG :
 ⛔ RÈGLES DE FIABILITÉ POUR LE CONTEXTE RAG :
 - Réponds uniquement avec les faits explicitement étayés par le contexte RAG fourni.
 - Si le contexte est absent, insuffisant ou ne répond pas à la question, dis clairement que les documents disponibles ne permettent pas de répondre. Ne complète pas avec tes connaissances générales et ne déduis pas de faits non présents.
