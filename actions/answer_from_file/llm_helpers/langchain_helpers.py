@@ -9,9 +9,10 @@ from __future__ import annotations
 import time
 from datetime import datetime, timezone
 
-import httpx
-import requests
+import asyncio
+from datetime import datetime, timezone
 
+import httpx
 from actions.constants.ActiveIntents import ActiveIntents
 from actions.logging.logging_helpers import log_info_text
 from actions.settings.settings import settings
@@ -90,26 +91,30 @@ async def get_context_from_langchain_rag(
     max_attempts = 2
     retryable_statuses = {429, 502, 503, 504}
 
+    # Reuse the shared asynchronous HTTP client.
+    client = HttpClientManager.get_client()
+
     for attempt in range(max_attempts):
 
         try:
-            response = requests.post(
+            response = await client.post(
                 url,
                 headers={
                     "X-Service-Token": settings.RASA_RAG_TOKEN.get_secret_value()
                 },
-                json=payload,
-                timeout=(5, 60)
+                json=payload
             )
 
-        except (requests.Timeout, requests.ConnectionError) as exc:
+        except httpx.TransportError as exc:
 
             if attempt < max_attempts - 1:
-                time.sleep(0.5)
+                await asyncio.sleep(0.5)
                 continue
 
             bot_reply = "RAG service connection or timeout failure."
-            await send_standard_fallback_problem_to_team_leader(action_label, payload, bot_reply)
+            await send_standard_fallback_problem_to_team_leader(
+                action_label, payload, bot_reply
+            )
             raise RAGServiceUnavailable(bot_reply) from exc
 
         status = response.status_code
@@ -130,42 +135,54 @@ async def get_context_from_langchain_rag(
                 return "unknown", ""
 
             bot_reply = "RAG endpoint returned an unexpected 404."
-            await send_standard_fallback_problem_to_team_leader(action_label, rag_payload, bot_reply)
+            await send_standard_fallback_problem_to_team_leader(
+                action_label, rag_payload, bot_reply
+            )
             raise RAGUnexpectedResponseError(bot_reply)
 
         # 2. Authentication/configuration failure
         if status == 401:
             bot_reply = "RAG authentication failed."
-            await send_standard_fallback_problem_to_team_leader(action_label, rag_payload, bot_reply)
+            await send_standard_fallback_problem_to_team_leader(
+                action_label, rag_payload, bot_reply
+            )
             raise RAGAuthenticationError(bot_reply)
 
         # 3. Invalid request
         if status == 422:
             bot_reply = "RAG rejected the request (422)."
-            await send_standard_fallback_problem_to_team_leader(action_label, rag_payload, bot_reply)
+            await send_standard_fallback_problem_to_team_leader(
+                action_label, rag_payload, bot_reply
+            )
             raise RAGInvalidRequestError(bot_reply)
 
         # 4. Retry only selected transient HTTP errors
         if status in retryable_statuses:
 
             if attempt < max_attempts - 1:
-                time.sleep(0.5 * (2 ** attempt))
+                await asyncio.sleep(0.5 * (2 ** attempt))
                 continue
 
             bot_reply = f"RAG temporarily unavailable (HTTP {status})."
-            await send_standard_fallback_problem_to_team_leader(action_label, rag_payload, bot_reply)
+            await send_standard_fallback_problem_to_team_leader(
+                action_label, rag_payload, bot_reply
+            )
             raise RAGServiceUnavailable(bot_reply)
 
         # 5. Other server errors
         if status >= 500:
             bot_reply = f"RAG service failure (HTTP {status})."
-            await send_standard_fallback_problem_to_team_leader(action_label, rag_payload, bot_reply)
+            await send_standard_fallback_problem_to_team_leader(
+                action_label, rag_payload, bot_reply
+            )
             raise RAGServiceUnavailable(bot_reply)
 
         # 6. Unexpected client errors
         if status != 200:
             bot_reply = f"Unexpected RAG HTTP status: {status}."
-            await send_standard_fallback_problem_to_team_leader(action_label, rag_payload, bot_reply)
+            await send_standard_fallback_problem_to_team_leader(
+                action_label, rag_payload, bot_reply
+            )
             raise RAGUnexpectedResponseError(bot_reply)
 
         # 7. Successful response
@@ -173,7 +190,9 @@ async def get_context_from_langchain_rag(
             data = response.json()
         except ValueError as exc:
             bot_reply = "RAG returned invalid JSON."
-            await send_standard_fallback_problem_to_team_leader(action_label, rag_payload, bot_reply)
+            await send_standard_fallback_problem_to_team_leader(
+                action_label, rag_payload, bot_reply
+            )
             raise RAGUnexpectedResponseError(bot_reply) from exc
 
         context = data.get("context", "")
@@ -181,7 +200,9 @@ async def get_context_from_langchain_rag(
 
         if not isinstance(context, str):
             bot_reply = "Invalid RAG context format."
-            await send_standard_fallback_problem_to_team_leader(action_label, rag_payload, bot_reply)
+            await send_standard_fallback_problem_to_team_leader(
+                action_label, rag_payload, bot_reply
+            )
             raise RAGUnexpectedResponseError(bot_reply)
 
         log_info_text(action_label, f"domains : {domains}")
