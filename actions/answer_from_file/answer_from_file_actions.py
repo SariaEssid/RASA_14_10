@@ -34,7 +34,7 @@ from actions.logging.logging_helpers import log_info_text, log_error_text, get_u
 from actions.settings.settings import settings
 from actions.utils.exception_error_messages import exception_fallback_err_dsi, exception_llm_err, exception_llm_err_dsi, \
     exception_fallback_err
-from actions.utils.message_helpers import send_random_message_user_and_dsi
+from actions.utils.message_helpers import send_standard_fallback_problem_to_team_leader
 from actions.utils.slots_helpers import get_conversational_slots
 
 # 🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩🚩
@@ -277,7 +277,7 @@ class BaseDynamicLLMAction(Action):
 
         except APIConnectionError as exc:
             return await asyncio.to_thread(
-                send_random_message_user_and_dsi,
+                send_standard_fallback_problem_to_team_leader,
                 action_label,
                 payload_tech_error,
                 exc,

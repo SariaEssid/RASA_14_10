@@ -20,7 +20,6 @@ from actions.logging.logging_helpers import log_info_text, log_warn_text
 from actions.semantic.faiss_ranking import rank_candidates, pick_weighted_answer
 from actions.settings.settings import settings
 from actions.utils.embedding_loader import get_embedder
-from actions.utils.message_helpers import get_random_message
 from actions.utils.models import FAQCandidate
 
 log = logging.getLogger("rasa-actions")
@@ -138,6 +137,15 @@ def append_friendly_intro_to_answer(answer):
     log_info_text("FINAL : ", bypass_words(formed_intro_msg.strip()) + ".")
 
     return bypass_words(formed_intro_msg.strip())
+
+def get_random_message(message_list):
+    message = secrets.choice(message_list)
+    formed_msg = adjust_lines(message)
+    return formed_msg
+
+
+def adjust_lines(answer):
+    return answer.replace("\\n", "\n")
 
 def bypass_words(text: str) -> str:
     words_to_bypass = [
@@ -311,7 +319,9 @@ def normalize_text_strict(text):
 
     return text
 
-def is_followup(current_question, last_question):
+# This method is JUST a basic follow_up criteria
+# It will be combined with multi-signal decision mechanism to decide Final FOLLOW_UP
+def is_basic_followup_criteria(current_question, last_question):
 
     if not last_question:
         return False
@@ -333,7 +343,6 @@ def is_followup(current_question, last_question):
     log_info_text("👉   👉   👉   👉   👉   Follow-up similarity : ", str(similarity) + " - " + str(len(words)))
 
     return similarity > settings.FOLLOWUP_THRESHOLD
-
 
 def track_prompt_decision_params(action_label, prompt, decision_infos): ## NEXT
     log_info_text(action_label, "🎯 prompting : " + prompt)

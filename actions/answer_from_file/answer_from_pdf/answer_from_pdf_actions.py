@@ -24,7 +24,8 @@ from actions.answer_from_file.answer_from_pdf.pdf_rag_pdf import retrieve_contex
 from actions.answer_from_file.bot_missions import get_standard_bot_mission, \
     get_detailed_standard_full_last_conv_bot_mission_with_context
 from actions.answer_from_file.follow_up.retrieve_decision_mode import get_decision_infos
-from actions.answer_from_file.llm_helpers import rewrite_using_slots_prod_grade, get_synonyms_lookup
+from actions.answer_from_file.llm_helpers.common_helpers import rewrite_using_slots_prod_grade
+from actions.answer_from_file.llm_helpers.synonym_lookup_helpers import get_synonyms_lookup
 from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.ActionsNome import ActionsNome
 from actions.constants.ActiveIntents import ActiveIntents

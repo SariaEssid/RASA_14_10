@@ -19,11 +19,10 @@ from actions.logging.logging_helpers import log_info_text, log_response_payload
 from actions.settings.settings import settings
 from actions.utils.interfaces import IResultsService
 from actions.utils.message_helpers import send_message_forwarded_by_buttons, \
-    send_fallback_problem_to_dsi_forwarded_by_buttons, alert_technical_problem_exception, \
+    send_standard_fallback_problem_to_team_leader_with_fe, alert_technical_problem_exception, \
     original_alert_follow_my_proposition, original_alert_unexpected_response
 
-rasa_to_spring_token = settings.RASA_TO_SPRING_TOKEN
-
+rasa_to_spring_token = settings.RASA_TO_SPRING_TOKEN.get_secret_value()
 
 def get_candidate_id(tracker):
     log_info_text("PPPPP : ", tracker.get_slot('last_intent'))
@@ -171,7 +170,7 @@ async def process_final_results_response(
             log_info_text(action_label, f"answer_status : {answer_status} - {active_flow}")
 
             if answer_status == 403:
-                response = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, answer.text)
+                response = await send_standard_fallback_problem_to_team_leader_with_fe(dispatcher, action_label, payload_tech_error, answer.text)
 
             elif answer_status == 404:
                 response = answer.text
@@ -199,7 +198,7 @@ async def process_final_results_response(
             else:
                 error_data = answer.json()
                 error_text = f"Server error: {error_data.get('error', 'Erreur inconnue')}"
-                response = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, error_text)
+                response = await send_standard_fallback_problem_to_team_leader_with_fe(dispatcher, action_label, payload_tech_error, error_text)
 
     except CircuitBreakerError as e:
         # ✅ ADD: Handle circuit breaker specifically
@@ -207,7 +206,7 @@ async def process_final_results_response(
         dispatcher.utter_message(BOT_MESSAGES.get('circuit_opened_alert'))
 
     except Exception as e:
-        response = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, e)
+        response = await send_standard_fallback_problem_to_team_leader_with_fe(dispatcher, action_label, payload_tech_error, e)
 
     # log user interaction
     await log_chat(

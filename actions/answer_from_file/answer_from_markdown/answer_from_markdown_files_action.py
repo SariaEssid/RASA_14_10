@@ -24,7 +24,10 @@ from actions.answer_from_file.answer_from_markdown.experts_rag.markdown_store im
 from actions.answer_from_file.bot_missions import get_standard_bot_mission, \
     get_neutral_bot_mission, get_extended_bot_mission, get_detailed_standard_full_last_conv_bot_mission_with_context
 from actions.answer_from_file.follow_up.retrieve_decision_mode import get_decision_infos
-from actions.answer_from_file.llm_helpers import rewrite_using_slots_prod_grade, get_synonyms_lookup, get_context_from_langchain_rag, get_filename_context_prompt, get_clean_slot_values
+from actions.answer_from_file.llm_helpers.common_helpers import rewrite_using_slots_prod_grade, get_clean_slot_values, \
+    get_filename_context_prompt
+from actions.answer_from_file.llm_helpers.langchain_helpers import get_context_from_langchain_rag
+from actions.answer_from_file.llm_helpers.synonym_lookup_helpers import get_synonyms_lookup
 from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.ActionsNome import ActionsNome
 from actions.constants.ActiveIntents import ActiveIntents
@@ -104,9 +107,10 @@ class ActionEvaluatorsAndPJ(BaseDynamicLLMAction):
                 maintained_intent = last_intent
                 last_last_user_question, last_answer = get_last_conversation(tracker, action_label)
                 if tag == 'VS':
-                    filename, context, prompt = await get_filename_context_prompt(action_label, last_last_user_question,
-                                                                                  last_answer, native_question,
-                                                                                  maintained_intent)
+                    filename, context, prompt = await get_filename_context_prompt(dispatcher, action_label,
+                                                                           last_last_user_question, last_answer, native_question,
+                                                                           maintained_intent)
+
                 else:
                     prompt = get_detailed_standard_full_last_conv_bot_mission_with_context(context, native_question,
                                                                                            last_last_user_question,

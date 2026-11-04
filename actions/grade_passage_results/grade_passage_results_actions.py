@@ -29,7 +29,7 @@ from actions.settings.settings import settings
 from actions.utils.error_handling import handle_action_errors
 from actions.utils.interfaces import IResultsService
 from actions.utils.message_helpers import original_alert_affirm_without_discussion, \
-    send_multiple_messages_forwarded_by_buttons, send_fallback_problem_to_dsi_forwarded_by_buttons, \
+    send_multiple_messages_forwarded_by_buttons, send_standard_fallback_problem_to_team_leader_with_fe, \
     alert_technical_problem_exception, original_alert_unexpected_response, send_message_forwarded_by_buttons
 from actions.utils.slots_helpers import empty_slots, \
     get_return_slots_candidat_id_fullname, \
@@ -39,7 +39,7 @@ from actions.utils.slots_helpers import empty_slots, \
 log = logging.getLogger("rasa-actions")
 ServiceType = TypeVar('ServiceType', bound='IResultsService')
 T = TypeVar('T', bound='IResultsService')
-rasa_to_spring_token = settings.RASA_TO_SPRING_TOKEN
+rasa_to_spring_token = settings.RASA_TO_SPRING_TOKEN.get_secret_value()
 
 ######################## METHODS NOT STILL NEEDING AUTHENTICATION #########################
 class ActionFetchFinalUnitResults(Action):
@@ -189,8 +189,7 @@ class ActionHandleDynamicFinalGlobalResults(Action):
                 bot_response_text = await self._get_bot_response_text(context)
 
             except Exception as e:
-                bot_response_text = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label,
-                                                                                      payload_tech_error, e)
+                bot_response_text = await send_standard_fallback_problem_to_team_leader_with_fe(dispatcher, action_label, payload_tech_error, e)
 
             await log_chat(
                 user_id,
@@ -233,7 +232,7 @@ class ActionHandleDynamicFinalGlobalResults(Action):
             dispatcher.utter_message(BOT_MESSAGES.get('circuit_opened_alert'))
 
         except Exception as e:
-            full_answer = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, e)
+            full_answer = await send_standard_fallback_problem_to_team_leader_with_fe(dispatcher, action_label, payload_tech_error, e)
 
         return full_answer
 
@@ -250,8 +249,8 @@ class ActionHandleDynamicFinalGlobalResults(Action):
             if active_flow in FlowType._value2member_map_:
                 bot_response_text = await self._process_results(dispatcher, action_label, tracker, payload_tech_error)
             else:
-                bot_response_text = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label,
-                                                                                            payload_tech_error,
+                bot_response_text = await send_standard_fallback_problem_to_team_leader_with_fe(dispatcher, action_label,
+                                                                                                payload_tech_error,
                                                                                             f'Flux Inexistant : {active_flow}')
         else:
             bot_response_text = BOT_MESSAGES.get('affirm_no_result')
@@ -344,14 +343,14 @@ class ActionHandleDeliberationFinalResults(Action):
                             bot_response_text = await _get_congrat_results(dispatcher, action_label, answer, answer_status)
 
                         except Exception as e:
-                            bot_response_text = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher,
-                                                                                                  action_label,
-                                                                                                  get_payload(user_id,
+                            bot_response_text = await send_standard_fallback_problem_to_team_leader_with_fe(dispatcher,
+                                                                                                            action_label,
+                                                                                                            get_payload(user_id,
                                                                                                               session_id,
                                                                                                               user_input,
                                                                                                               intent,
                                                                                                               confidence),
-                                                                                                  e)
+                                                                                                            e)
 
                     await log_chat(user_id, session_id, user_input, bot_response_text, intent, confidence)
                     return [SlotSet("active_flow", FlowType.CONGRATS.value)]

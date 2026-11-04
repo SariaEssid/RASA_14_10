@@ -4,17 +4,17 @@ actions/utils/error_handling.py
 @author ESSID Saria | Copyright (c) 2025. ESPRIT
 """
 
+import logging
+from datetime import datetime, timezone
 from functools import wraps
 from typing import Callable, Any, Text, Dict, List
-from rasa_sdk import Tracker
-from rasa_sdk.events import SlotSet
-from rasa_sdk.executor import CollectingDispatcher
-from datetime import datetime, timezone
-from actions.constants.Constants import BOT_MESSAGES
-from actions.utils.message_helpers import send_fallback_problem_to_dsi_forwarded_by_buttons
 
-import logging
 import httpx
+from rasa_sdk import Tracker
+from rasa_sdk.executor import CollectingDispatcher
+
+from actions.constants.Constants import BOT_MESSAGES
+from actions.utils.message_helpers import send_standard_fallback_problem_to_team_leader_with_fe
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ def handle_action_errors(original_func: Callable) -> Callable:
                 "confidence": tracker.latest_message.get("intent", {}).get("confidence"),
                 "messageExchangeDate": datetime.now(timezone.utc).isoformat()
             }
-            await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, "CENTRAL_HANDLING_ERROR", payload_tech_error, e)
+            await send_standard_fallback_problem_to_team_leader_with_fe(dispatcher, "CENTRAL_HANDLING_ERROR", payload_tech_error, e)
 
         return []
     return wrapper

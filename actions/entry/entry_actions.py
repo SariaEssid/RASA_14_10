@@ -30,7 +30,7 @@ from actions.logging.logging_helpers import get_util_values_with_log, log_debug_
 from actions.utils.error_handling import handle_action_errors
 from actions.utils.interfaces import IResultsService
 from actions.utils.message_helpers import send_multiple_messages_forwarded_by_buttons, \
-    send_fallback_problem_to_dsi_forwarded_by_buttons, alert_technical_problem_exception
+    send_standard_fallback_problem_to_team_leader_with_fe, alert_technical_problem_exception
 from actions.utils.slots_helpers import get_conversational_slots, get_return_slots_for_conversations
 
 log = logging.getLogger("rasa-actions")
@@ -203,12 +203,12 @@ class ActionGetDynamicResponse(BaseDynamicLLMAction):
             await log_chat(user_id, session_id, question, answer, intent, confidence)
 
         except KeyError as key_err:
-            answer = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, key_err)
+            answer = await send_standard_fallback_problem_to_team_leader_with_fe(dispatcher, action_label, payload_tech_error, key_err)
             log_info_text(action_label, "PIKA-3")
             await log_chat(user_id, session_id, question, answer, intent, confidence)
 
         except (json.JSONDecodeError, TypeError) as parse_err:
-            answer = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, parse_err)
+            answer = await send_standard_fallback_problem_to_team_leader_with_fe(dispatcher, action_label, payload_tech_error, parse_err)
             log_info_text(action_label, "PIKA-2")
             await log_chat(user_id, session_id, question, answer, intent, confidence)
 
@@ -277,13 +277,11 @@ class ActionGetNextDetails(Action):
             await log_chat(user_id, session_id, user_input, answer, intent, confidence)
 
         except KeyError as key_err:
-            answer = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error,
-                                                                       key_err)
+            answer = await send_standard_fallback_problem_to_team_leader_with_fe(dispatcher, action_label, payload_tech_error, key_err)
             await log_chat(user_id, session_id, user_input, answer, intent, confidence)
 
         except (json.JSONDecodeError, TypeError) as parse_err:
-            answer = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error,
-                                                                       parse_err)
+            answer = await send_standard_fallback_problem_to_team_leader_with_fe(dispatcher, action_label, payload_tech_error, parse_err)
             await log_chat(user_id, session_id, user_input, answer, intent, confidence)
 
         except Exception as e:

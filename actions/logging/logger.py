@@ -3,13 +3,13 @@ import os
 from datetime import datetime, timezone
 
 import httpx
-
-from actions.settings.config import API_URL
+from actions.settings.settings import settings
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "DEBUG").upper()
 logger = logging.getLogger("rasa-actions")
 
 _client = None
+API_URL = str(settings.API_URL)
 
 def _get_client() -> httpx.AsyncClient:
     """Create lazily, inside the running event loop (not at import time)."""

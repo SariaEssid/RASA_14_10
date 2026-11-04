@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import re
 import time
+from datetime import datetime, timezone
 from typing import List, Dict, Text, Any
 
 from rasa_sdk import Tracker
@@ -23,14 +24,14 @@ from actions.answer_from_file.bot_missions import get_standard_bot_mission, \
     give_link_label
 from actions.answer_from_file.data_classes import RequiredValuesShortAnswers
 from actions.answer_from_file.follow_up.retrieve_decision_mode import get_decision_infos
-from actions.answer_from_file.llm_helpers import rewrite_using_slots_prod_grade, get_synonyms_lookup, \
-    get_grade_speciality_values, \
-    get_sscomp_values, get_context_from_langchain_rag, get_filename_context_prompt, get_util_values
+from actions.answer_from_file.llm_helpers.common_helpers import rewrite_using_slots_prod_grade, \
+    get_grade_speciality_values, get_sscomp_values, get_filename_context_prompt, get_util_values
+from actions.answer_from_file.llm_helpers.langchain_helpers import get_context_from_langchain_rag
+from actions.answer_from_file.llm_helpers.synonym_lookup_helpers import get_synonyms_lookup
 from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.ActionsNome import ActionsNome
 from actions.constants.ActiveIntents import ActiveIntents
-from actions.constants.Constants import FEEDBACK_BUTTONS, DIRECT_HAND_LONG, GO_SHORT, \
-    DIRECT_HAND_FLAG, BOT_MESSAGES
+from actions.constants.Constants import FEEDBACK_BUTTONS, DIRECT_HAND_LONG, GO_SHORT, DIRECT_HAND_FLAG, BOT_MESSAGES
 from actions.constants.EntitiesMapping import ALL_ENTITIES_MAPPINGS
 from actions.logging.logger import log_chat
 from actions.logging.logging_helpers import log_info_text
@@ -42,6 +43,16 @@ from actions.utils.slots_helpers import get_return_slots_for_conversations, get_
 
 nbr_chunks = settings.RAG_DEFAULT_CHUNKS
 top_k = settings.EXPERT_TABLE_TOP_K
+
+def get_payload_rasa_rag_service():
+    return {
+        "userId": None,
+        "sessionId": None,
+        "userInput": None,
+        "rasaIntent": str(ActiveIntents.NLU_FALLBACK.value),
+        "confidence": 1,
+        "messageExchangeDate": datetime.now(timezone.utc).isoformat()
+    }
 
 class ActionLangChainRouting(BaseDynamicLLMAction):
 
@@ -82,14 +93,12 @@ class ActionLangChainRouting(BaseDynamicLLMAction):
 
         try:
             maintained_intent = intent
-
             native_question, domains, new_nbr_chunks = get_native_question_domain_nbr_chunks(last_intent,
                                                                                              native_question, intent,
                                                                                              active_flow,
                                                                                              sscomp_entity_values,
                                                                                              settings.RAG_DEFAULT_CHUNKS)
             log_info_text(action_label, "FLOWW - domains : " + str(domains))
-
             decision_mode = "short"
             is_hard = bool(re.search(verif_hard_qe(), native_question, flags=re.IGNORECASE))
 
@@ -120,8 +129,7 @@ class ActionLangChainRouting(BaseDynamicLLMAction):
                 question = rewrite_using_slots_prod_grade(native_question, detected_slots,
                                                           get_synonyms_lookup(action_label, entities),
                                                           ALL_ENTITIES_MAPPINGS)
-                filename, context, prompt = await get_filename_context_prompt(action_label, last_second_question,
-                                                                              last_answer, question, maintained_intent)
+                filename, context, prompt = await get_filename_context_prompt(dispatcher, action_label, last_second_question, last_answer, question, maintained_intent)
 
             else:
                 if intent == ActiveIntents.NLU_FALLBACK.value:
@@ -189,6 +197,8 @@ async def get_short_answers(ctx: RequiredValuesShortAnswers):
     question = rewrite_using_slots_prod_grade(native_question, detected_slots,
                                               get_synonyms_lookup(action_label, entities), ALL_ENTITIES_MAPPINGS)
     filename, context = await get_context_from_langchain_rag(action_label, question, domains, [], new_nbr_chunks)
+
+    log_info_text(action_label, f"context-123 : {context} - {filename}")
 
     log_params(action_label, domains, intent)
 

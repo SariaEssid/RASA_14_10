@@ -12,7 +12,7 @@ from rasa_sdk import Tracker
 from rasa_sdk.events import FollowupAction
 from rasa_sdk.executor import CollectingDispatcher
 
-from actions.actions import normalize_text, is_followup, track_prompt_decision_params
+from actions.actions import normalize_text, is_basic_followup_criteria, track_prompt_decision_params
 from actions.answer_from_file.answer_from_file_actions import BaseDynamicLLMAction
 from actions.answer_from_file.follow_up.retrieve_decision_mode import get_decision_infos, get_decision_mode
 from actions.constants.ActionsLabel import ActionsLabel
@@ -195,7 +195,7 @@ async def follow_up_semantic(self, dispatcher, tracker, question, predicted_inte
     last_intent, intent, active_flow, last_user_question, last_user_response = get_semantic_values(tracker)
 
     action_label = ActionsLabel.PY_SEMANTIC.value
-    followup = is_followup(question, last_user_question)
+    basic_follow_up = is_basic_followup_criteria(question, last_user_question)
     # Detect follow-up option based on keywords
 
     decision_infos = await get_decision_infos(self, dispatcher, tracker, action_label, question, last_user_question, intent, last_intent)
@@ -207,11 +207,11 @@ async def follow_up_semantic(self, dispatcher, tracker, question, predicted_inte
     log_info_text(action_label, "Current Question : " + question)
     log_info_text(action_label, "Last Question : " + last_user_question)
     log_info_text(action_label, "Last Response : " + last_user_response)
-    log_info_text(action_label, "FOLLOW by semantic : " + str(followup))
+    log_info_text(action_label, "BASIC FOLLOW CRITERIA by semantic : " + str(basic_follow_up))
     log_info_text(action_label, "Decision mode : " + decision_mode)
 
 
-    last_intent, action = get_forwarded_action(tracker, action_label, followup, decision_mode)
+    last_intent, action = get_forwarded_action(tracker, action_label, basic_follow_up, decision_mode)
 
     # Retrieve the list of SlotSet events
     events = get_return_slots_qa_intent_flow_followed(

@@ -35,7 +35,7 @@ from actions.utils.slots_helpers import get_conversational_slots, get_return_slo
 log = logging.getLogger("rasa-actions")
 ServiceType = TypeVar('ServiceType', bound='IResultsService')
 T = TypeVar('T', bound='IResultsService')
-rasa_to_spring_token = settings.RASA_TO_SPRING_TOKEN
+rasa_to_spring_token = settings.RASA_TO_SPRING_TOKEN.get_secret_value()
 
 class ActionDynamicFaq(Action):
 

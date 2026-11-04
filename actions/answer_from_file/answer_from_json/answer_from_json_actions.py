@@ -22,7 +22,8 @@ from actions.answer_from_file.bot_missions import get_bot_neutral_header_mission
     get_standard_bot_mission_with_alerts, get_detailed_standard_full_last_conv_bot_mission_with_context_alerts
 from actions.answer_from_file.data_classes import MyConversationContext
 from actions.answer_from_file.follow_up.retrieve_decision_mode import get_decision_infos
-from actions.answer_from_file.llm_helpers import get_synonyms_lookup, rewrite_using_slots_prod_grade
+from actions.answer_from_file.llm_helpers.common_helpers import rewrite_using_slots_prod_grade
+from actions.answer_from_file.llm_helpers.synonym_lookup_helpers import get_synonyms_lookup
 from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.ActionsNome import ActionsNome
 from actions.constants.ActiveIntents import ActiveIntents

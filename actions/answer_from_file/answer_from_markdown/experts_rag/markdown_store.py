@@ -5,15 +5,14 @@ actions/answer_from_file/answer_from_markdown/experts_rag/markdown_store.py
 """
 
 from __future__ import annotations
-from typing import List
+
+import re
+
 from actions.actions import normalize_text
 from actions.constants.Constants import EM_SPEC, TIC_SPEC, GC_SPEC, MATH_SPEC, SE_PTP_SSCOMP, DISSER_SSCOMP, SP_SSCOMP, \
     CP_SSCOMP, RDI_SSCOMP, DOSS_SSCOMP, ElJ_SSCOMP, FLAG_ALERT
 from actions.constants.EntitiesMapping import ALL_SPECIAITIES
 from actions.logging.logging_helpers import log_info_text
-
-import re
-
 from actions.settings.settings import settings
 
 

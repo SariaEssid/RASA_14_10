@@ -25,7 +25,7 @@ from actions import (
 from actions.answer_from_file.answer_from_json.answer_from_json_actions import ActionGetResponseFromJSON
 from actions.answer_from_file.answer_from_markdown.answer_from_langchain_grades_action import ActionAcademicStuff
 from actions.answer_from_file.answer_from_pdf.answer_from_pdf_actions import ActionPGInfosFromPDF
-from actions.answer_from_file.llm_helpers import HttpClientManager
+from actions.answer_from_file.llm_helpers.langchain_helpers import HttpClientManager
 from actions.context_awareness_flow.action_context_awareness import ActionMaintainConversationFlow
 from actions.util_actions.common_actions import ActionUtterBotTyping
 from actions.utils.services import HttpResultsService

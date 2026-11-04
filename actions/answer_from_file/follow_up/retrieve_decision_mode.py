@@ -16,7 +16,7 @@ from actions.answer_from_file.follow_up.pron_det_checking import check_pronoun_d
 from actions.constants.ActiveIntents import ActiveIntents
 from actions.constants.Constants import DIRECT_HAND_FLAG, BLOCKAGE_PATTERNS
 from actions.logging.logging_helpers import log_info_text
-from actions.semantic.semantic_actions import is_followup
+from actions.semantic.semantic_actions import is_basic_followup_criteria
 
 
 class RAGServiceUnavailable(Exception):
@@ -100,7 +100,7 @@ def compute_similarity(current_q: str, last_q: str) -> float:
         return 0.0
 
     try:
-        return is_followup(current_q, last_q)
+        return is_basic_followup_criteria(current_q, last_q)
     except (ValueError, TypeError, AttributeError) as e:
         # Catch specific errors related to string processing or math
         log_info_text("EXCEPTION : ", str(e))

@@ -21,9 +21,10 @@ from actions.answer_from_file.bot_missions import get_extended_bot_mission, \
     fusion_question
 from actions.answer_from_file.data_classes import MyConversationContextSlots
 from actions.answer_from_file.follow_up.retrieve_decision_mode import get_decision_infos
-from actions.answer_from_file.llm_helpers import rewrite_using_slots_prod_grade, get_synonyms_lookup, \
-    get_grade_speciality_values, \
-    get_sscomp_values, get_context_from_langchain_rag, get_util_values
+from actions.answer_from_file.llm_helpers.langchain_helpers import get_context_from_langchain_rag
+from actions.answer_from_file.llm_helpers.common_helpers import rewrite_using_slots_prod_grade, \
+    get_grade_speciality_values, get_util_values, get_sscomp_values
+from actions.answer_from_file.llm_helpers.synonym_lookup_helpers import get_synonyms_lookup
 from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.ActionsNome import ActionsNome
 from actions.constants.ActiveIntents import ActiveIntents

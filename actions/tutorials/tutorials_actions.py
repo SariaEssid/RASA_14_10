@@ -4,13 +4,20 @@ actions/tutorials/tutorials_actions.py
 @author ESSID Saria | Copyright (c) 2025. ESPRIT
 """
 
+import base64
+import json
+import logging
+import re
 from io import BytesIO
 from typing import Text, Dict, Any, List
 from typing import TypeVar
+
+import requests
 from PIL import Image
 from aiocircuitbreaker import CircuitBreakerError
 from rasa_sdk import Action, Tracker
 from rasa_sdk.executor import CollectingDispatcher
+
 from actions.actions import get_payload, get_semantic_random_reply, generate_composante_buttons
 from actions.constants.ActionsLabel import ActionsLabel
 from actions.constants.ActionsNome import ActionsNome
@@ -21,16 +28,10 @@ from actions.logging.logging_helpers import get_util_values_with_log, log_info_t
 from actions.settings.settings import settings
 from actions.utils.error_handling import handle_action_errors
 from actions.utils.interfaces import IResultsService
-from actions.utils.message_helpers import send_fallback_problem_to_dsi_forwarded_by_buttons, \
+from actions.utils.message_helpers import send_standard_fallback_problem_to_team_leader_with_fe, \
     alert_technical_problem_exception, send_multiple_messages_forwarded_by_buttons, \
-    send_multiple_messages_images_forwarded_by_buttons, send_custom_fallback_problem_to_dsi_forwarded_by_buttons
+    send_multiple_messages_images_forwarded_by_buttons, send_custom_fallback_problem_to_team_leader_with_fe_btn
 from actions.utils.slots_helpers import empty_slots
-
-import requests
-import base64
-import json
-import logging
-import re
 
 log = logging.getLogger("rasa-actions")
 ServiceType = TypeVar('ServiceType', bound='IResultsService')
@@ -119,11 +120,11 @@ class ActionSelectButton(Action):
             await log_chat(user_id, session_id, user_input, answer, intent, confidence)
 
         except KeyError as key_err:
-            answer = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, key_err)
+            answer = await send_standard_fallback_problem_to_team_leader_with_fe(dispatcher, action_label, payload_tech_error, key_err)
             await log_chat(user_id, session_id, user_input, answer, intent, confidence)
 
         except (json.JSONDecodeError, TypeError) as parse_err:
-            answer = await send_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, parse_err)
+            answer = await send_standard_fallback_problem_to_team_leader_with_fe(dispatcher, action_label, payload_tech_error, parse_err)
             await log_chat(user_id, session_id, user_input, answer, intent, confidence)
 
         except Exception as e:
@@ -160,7 +161,7 @@ async def get_google_images(matches, dispatcher, action_label, payload_tech_erro
 
         except Exception as e:
             message = "Oupsy ! 😬, le lien est inaccessible actuellement !\n" + BOT_MESSAGES.get('to_be_fixed_by_team')
-            answer = await send_custom_fallback_problem_to_dsi_forwarded_by_buttons(dispatcher, action_label, payload_tech_error, e, message, GRILLE_SS_COMPOSANTES)
+            answer = await send_custom_fallback_problem_to_team_leader_with_fe_btn(dispatcher, action_label, payload_tech_error, e, message, GRILLE_SS_COMPOSANTES)
             await log_chat(user_id, session_id, user_input, answer, intent, confidence)
 
     return list_img_str

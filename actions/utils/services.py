@@ -7,7 +7,6 @@ actions/utils/test_services.py
 from collections import deque
 from typing import List, Dict, Any
 from aiocircuitbreaker import circuit
-from actions.settings.config import API_URL
 from actions.settings.settings import settings
 from actions.utils.interfaces import IResultsService
 
@@ -16,6 +15,8 @@ import time
 import httpx
 
 log = logging.getLogger("rasa-actions")
+API_URL = str(settings.API_URL)
+
 # ---------------------------
 # Circuit breaker configuration
 # ---------------------------
