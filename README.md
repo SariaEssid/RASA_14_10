@@ -76,6 +76,8 @@ If the user expresses an emotion, the chatbot responds empathetically before exp
 
 ---
 
+---
+
 ## 📌 Project Purpose
 
 This chatbot was developed to:
@@ -83,6 +85,64 @@ This chatbot was developed to:
 - Handle multilingual queries (English, Arabic, etc.): To be done in near future
 - Automate common FAQ and support tasks
 - Serve as an evolving knowledge assistant for the enterprise
+
+---
+
+### Multi-Signal Follow-Up Decision Mechanism
+
+The chatbot uses a **multi-signal decision mechanism** to determine whether a new user question is a contextual follow-up or an independent question.
+
+The decision is not based solely on question length or semantic similarity.
+
+#### 1. Basic Semantic Follow-Up Criterion
+
+The `is_basicfollowup_criteria()` method provides an initial semantic signal:
+
+- Checks whether a previous user question exists.
+- Generates embeddings for the current and previous questions.
+- Computes their cosine similarity.
+- Compares the similarity score against the configured `FOLLOWUP_THRESHOLD`.
+
+This method returns a Boolean indicating whether the questions are sufficiently semantically similar.
+
+**Important:** This is only a basic follow-up criterion. A short question is not automatically considered a follow-up. The previously used short-question heuristic has been deliberately removed to avoid false positives.
+
+#### 2. Multi-Signal Decision Evaluation
+
+The initial semantic result is combined with the broader decision mechanism implemented in `get_decision_infos()`.
+
+The decision process takes into account conversational information, including:
+
+- The current user question.
+- The previous user question.
+- The current predicted intent.
+- The previous intent.
+- The decision mode returned by the multi-signal evaluation.
+
+This allows the chatbot to consider the conversational context rather than relying on a single similarity score.
+
+#### 3. Final Follow-Up Action
+
+The `get_forwarded_action()` method combines:
+
+- The basic semantic follow-up criterion.
+- The decision mode produced by the multi-signal mechanism.
+- The conversation's existing intent and flow information.
+
+Based on this evaluation, the chatbot determines whether to forward the conversation to an appropriate previous action or continue with the normal intent-handling process.
+
+The resulting events are flattened before being returned to Rasa.
+
+#### 4. Expected Behavior
+
+| Scenario                                                          | Expected behavior                                   |
+|-------------------------------------------------------------------|-----------------------------------------------------|
+| A semantically related question that continues the previous topic | Can be classified as a contextual follow-up         |
+| A short question without relevant conversational context          | Must not automatically be classified as a follow-up |
+| A question referring to a previous topic using different wording  | Evaluated using the combined decision mechanism     |
+| An independent question unrelated to the previous conversation    | Should be handled as a new question                 |
+
+**Design principle:** Semantic similarity provides an initial signal; the final follow-up decision is made through the combined multi-signal mechanism. This separation helps reduce false positives and preserve conversational continuity.
 
 ---
 

@@ -69,6 +69,7 @@ def get_payload_rasa_rag_service():
         "messageExchangeDate": datetime.now(timezone.utc).isoformat()
     }
 
+# rag_payload : used Exception metadata for unanswered questions and future analysis
 rag_payload = get_payload_rasa_rag_service()
 
 async def get_context_from_langchain_rag(
@@ -80,6 +81,7 @@ async def get_context_from_langchain_rag(
 ):
     url = LANG_CHAIN_URL.rstrip("/") + "/rag/context"
 
+    # payload : used for RAG request containing the question and retrieval filters
     payload = {
         "question": native_question,
         "domains": domains,
@@ -187,21 +189,31 @@ async def get_context_from_langchain_rag(
         # 7. Successful response
         try:
             data = response.json()
+
         except ValueError as exc:
             bot_reply = f"RAG returned invalid JSON : {json.dumps(payload)}"
-            await send_standard_fallback_problem_to_team_leader(
-                action_label, rag_payload, bot_reply
-            )
+            await send_standard_fallback_problem_to_team_leader(action_label, rag_payload, bot_reply)
             raise RAGUnexpectedResponseError(bot_reply) from exc
+
+        # Validate JSON structure
+        if not isinstance(data, dict):
+            bot_reply = f"RAG response must be a JSON object : {json.dumps(payload)}"
+            await send_standard_fallback_problem_to_team_leader(action_label, rag_payload, bot_reply)
+            raise RAGUnexpectedResponseError(bot_reply)
 
         context = data.get("context", "")
         filename = data.get("source_file", "unknown")
 
+        # Validate context
         if not isinstance(context, str):
             bot_reply = f"Invalid RAG context format : {json.dumps(payload)}"
-            await send_standard_fallback_problem_to_team_leader(
-                action_label, rag_payload, bot_reply
-            )
+            await send_standard_fallback_problem_to_team_leader(action_label, rag_payload, bot_reply)
+            raise RAGUnexpectedResponseError(bot_reply)
+
+        # Validate source file
+        if not isinstance(filename, str):
+            bot_reply = f"Invalid RAG source_file format : {json.dumps(payload)}"
+            await send_standard_fallback_problem_to_team_leader(action_label, rag_payload, bot_reply)
             raise RAGUnexpectedResponseError(bot_reply)
 
         log_info_text(action_label, f"domains : {domains}")
