@@ -100,7 +100,7 @@ class ActionPGInfosFromPDF(BaseDynamicLLMAction):
                     native_question_log=native_question
                 )
 
-                log_info_text(f"{DIRECT_HAND_FLAG}", f" {action_label} - SUMMARY : {native_question}")
+                log_info_text(f"{DIRECT_HAND_FLAG}", f" {action_label} - SARIA-ROMDHANI : {native_question}")
 
                 context = retrieve_context_pdf(native_question, pdf_path=PDF_PATH, k=4)
                 prompt = get_detailed_standard_full_last_conv_bot_mission_with_context(context, native_question,

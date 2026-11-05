@@ -18,7 +18,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 from actions.constants.Constants import BOT_MESSAGES, ALL_COMPOSANTES_PRINCIPALES, DIRECT_HAND_FLAG
 from actions.logging.logging_helpers import log_info_text, log_warn_text
 from actions.semantic.faiss_ranking import rank_candidates, pick_weighted_answer
-from actions.settings.settings import settings
 from actions.utils.embedding_loader import get_embedder
 from actions.utils.models import FAQCandidate
 
@@ -328,9 +327,9 @@ def is_basic_followup_criteria(current_question, last_question):
 
     words = current_question.split()
 
-    # Rule 1 — short questions are likely follow-ups
-    if len(words) <= 3:
-        return True
+    # Rule 1 — short questions are likely follow-ups  // REMOVED
+    # if len(words) <= 3:
+        # return True
 
     embed_model = get_embedder()
     emb_current = embed_model.encode([current_question])

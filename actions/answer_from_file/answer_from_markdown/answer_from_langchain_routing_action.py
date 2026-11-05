@@ -124,7 +124,7 @@ class ActionLangChainRouting(BaseDynamicLLMAction):
                     native_question_log=native_question
                 )
 
-                log_info_text(f"{DIRECT_HAND_FLAG}", f" {action_label} - SUMMARY : {native_question}")
+                log_info_text(f"{DIRECT_HAND_FLAG}", f" {action_label} - SARIA-ROMDHANI : {native_question}")
 
                 question = rewrite_using_slots_prod_grade(native_question, detected_slots,
                                                           get_synonyms_lookup(action_label, entities),

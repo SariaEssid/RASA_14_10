@@ -6,13 +6,12 @@ actions/answer_from_file/common_helpers.py
 
 from __future__ import annotations
 
-import time
-from datetime import datetime, timezone
-
 import asyncio
+import json
 from datetime import datetime, timezone
 
 import httpx
+
 from actions.constants.ActiveIntents import ActiveIntents
 from actions.logging.logging_helpers import log_info_text
 from actions.settings.settings import settings
@@ -111,7 +110,7 @@ async def get_context_from_langchain_rag(
                 await asyncio.sleep(0.5)
                 continue
 
-            bot_reply = "RAG service connection or timeout failure."
+            bot_reply = f"RAG service connection or timeout failure : {json.dumps(payload)}"
             await send_standard_fallback_problem_to_team_leader(
                 action_label, payload, bot_reply
             )
@@ -134,7 +133,7 @@ async def get_context_from_langchain_rag(
             if error_code == "no_relevant_context":
                 return "unknown", ""
 
-            bot_reply = "RAG endpoint returned an unexpected 404."
+            bot_reply = f"RAG endpoint returned an unexpected 404 : {json.dumps(payload)}"
             await send_standard_fallback_problem_to_team_leader(
                 action_label, rag_payload, bot_reply
             )
@@ -142,7 +141,7 @@ async def get_context_from_langchain_rag(
 
         # 2. Authentication/configuration failure
         if status == 401:
-            bot_reply = "RAG authentication failed."
+            bot_reply = f"RAG authentication failed : {json.dumps(payload)}"
             await send_standard_fallback_problem_to_team_leader(
                 action_label, rag_payload, bot_reply
             )
@@ -150,7 +149,7 @@ async def get_context_from_langchain_rag(
 
         # 3. Invalid request
         if status == 422:
-            bot_reply = "RAG rejected the request (422)."
+            bot_reply = f"RAG rejected the request (422) : {json.dumps(payload)}"
             await send_standard_fallback_problem_to_team_leader(
                 action_label, rag_payload, bot_reply
             )
@@ -163,7 +162,7 @@ async def get_context_from_langchain_rag(
                 await asyncio.sleep(0.5 * (2 ** attempt))
                 continue
 
-            bot_reply = f"RAG temporarily unavailable (HTTP {status})."
+            bot_reply = f"RAG temporarily unavailable (HTTP {status}) : {json.dumps(payload)}"
             await send_standard_fallback_problem_to_team_leader(
                 action_label, rag_payload, bot_reply
             )
@@ -171,7 +170,7 @@ async def get_context_from_langchain_rag(
 
         # 5. Other server errors
         if status >= 500:
-            bot_reply = f"RAG service failure (HTTP {status})."
+            bot_reply = f"RAG service failure (HTTP {status}) : {json.dumps(payload)}"
             await send_standard_fallback_problem_to_team_leader(
                 action_label, rag_payload, bot_reply
             )
@@ -179,7 +178,7 @@ async def get_context_from_langchain_rag(
 
         # 6. Unexpected client errors
         if status != 200:
-            bot_reply = f"Unexpected RAG HTTP status: {status}."
+            bot_reply = f"Unexpected RAG HTTP status: {status} : {json.dumps(payload)}"
             await send_standard_fallback_problem_to_team_leader(
                 action_label, rag_payload, bot_reply
             )
@@ -189,7 +188,7 @@ async def get_context_from_langchain_rag(
         try:
             data = response.json()
         except ValueError as exc:
-            bot_reply = "RAG returned invalid JSON."
+            bot_reply = f"RAG returned invalid JSON : {json.dumps(payload)}"
             await send_standard_fallback_problem_to_team_leader(
                 action_label, rag_payload, bot_reply
             )
@@ -199,7 +198,7 @@ async def get_context_from_langchain_rag(
         filename = data.get("source_file", "unknown")
 
         if not isinstance(context, str):
-            bot_reply = "Invalid RAG context format."
+            bot_reply = f"Invalid RAG context format : {json.dumps(payload)}"
             await send_standard_fallback_problem_to_team_leader(
                 action_label, rag_payload, bot_reply
             )

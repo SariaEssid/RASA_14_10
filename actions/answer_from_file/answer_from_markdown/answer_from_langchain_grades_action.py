@@ -76,16 +76,16 @@ class ActionAcademicStuff(BaseDynamicLLMAction):
                 last_last_user_question, last_answer = get_last_conversation(tracker, action_label)
 
                 prompt_qe = fusion_question(last_last_user_question, native_question)
-                log_info_text(action_label + "FUSIONNED QUESTIONS : ", prompt_qe)
+                log_info_text(action_label + "FUSIONNED QUESTIONS LANG-CHAIN: ", prompt_qe)
                 native_question = await self.call_llm_safe(
                     dispatcher=dispatcher,
                     prompt=prompt_qe,
                     action_label=action_label,
                     payload_tech_error=payload_tech_error
                 )
+                log_info_text(f"{DIRECT_HAND_FLAG}", f" {action_label} - NATIVE QUESTION FUSIONNED LANG-CHAIN : {native_question}")
 
                 final_native_question = native_question
-
                 ctx = MyConversationContextSlots(
                     tracker=tracker,
                     nbr_chunks=nbr_chunks,

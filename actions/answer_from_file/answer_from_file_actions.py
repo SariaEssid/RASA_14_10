@@ -374,7 +374,7 @@ async def fusion_and_call_llm(
     log_info_text("LASTA - 4 : ", native_question_log)
 
     prompt_qe = fusion_question(last_last_user_question, question)
-    log_info_text(action_label + "FUSIONNED QUESTIONS : ", prompt_qe)
+    log_info_text(action_label + "FUSIONNED QUESTIONS FILE : ", prompt_qe)
 
     native_question = await self.call_llm_safe(
         dispatcher=dispatcher,
@@ -383,7 +383,7 @@ async def fusion_and_call_llm(
         payload_tech_error=payload_tech_error
     )
 
-    log_info_text(f"{DIRECT_HAND_FLAG}", f" {action_label} - NATIVE QUESTION FUSIONNED : {native_question}")
+    log_info_text(f"{DIRECT_HAND_FLAG}", f" {action_label} - NATIVE QUESTION FUSIONNED FILE : {native_question}")
     return native_question
 
 
