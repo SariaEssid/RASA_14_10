@@ -71,7 +71,7 @@ class ActionMaintainConversationFlow(BaseDynamicLLMAction):
             send_multiple_messages_forwarded_by_buttons(dispatcher, f"{get_local_header(elapsed, 'FALL-BACK', 'LLM')} {append_friendly_intro_to_answer(answer)}",FEEDBACK_BUTTONS)
 
             await log_chat(user_id, session_id, native_question, answer, intent, confidence)
-            return get_return_slots_for_conversations(get_slots_to_set_maintain_active_flow(last_second_question, native_question, answer, last_intent, None, active_flow))
+            return get_return_slots_for_conversations(get_slots_to_set_maintain_active_flow(last_second_question, native_question, answer, intent, None, active_flow))
 
         except Exception as unexpected:
             answer = await unexpected_exception_dsi(dispatcher, action_label, payload_tech_error, str(unexpected))

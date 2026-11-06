@@ -81,9 +81,33 @@ rag_payload = {
     }
 standard_user_friendly_msg = get_random_message(BOT_MESSAGES['fallback_dsi'])
 
-async def get_filename_context_prompt(dispatcher, action_label, last_second_question, last_answer, question, maintained_intent):
+async def get_filename_context_prompt(dispatcher, action_label, last_last_user_question, last_answer, full_history, maintained_intent):
+
     try:
-        filename, context, prompt = await get_filename_context_prompt(action_label, last_second_question, last_answer, question, maintained_intent)
+        full_history = f"""{full_history.strip()}"""
+        last_question = full_history.split(":")[0].strip()
+
+        log_info_text(action_label, "👉  =====> SARSA full_history : " + full_history)
+        log_info_text(action_label, "👉  =====> SARSA last_question : " + last_question)
+
+        domains = []
+        log_info_text(action_label, f"maintained_intent: {str(maintained_intent)}")
+
+        native_question, domains, nbr_chunks = get_util_values(maintained_intent, None, None, None, domains, None)
+
+        if domains:
+            log_info_text(action_label, "============================================> domains : " + str(domains))
+
+        filename, context = await get_context_from_langchain_rag(action_label, full_history, domains, [], 2)
+        if maintained_intent == ActiveIntents.ASK_PROCEDURE_PG.value:
+            log_info_text(action_label, "============================================> SARSA SHORT : " + last_question)
+            prompt = get_short_standard_full_last_conv_bot_mission_with_context_alerts(context, last_question, last_last_user_question, last_answer, "")
+        elif maintained_intent in ActiveIntents.RESULTS_INTENTS:
+            prompt = get_extended_bot_mission_with_alerts(last_question, context, give_format())
+        else:
+            log_info_text(action_label, "============================================> SARSA EXTENDED : " + last_question)
+            prompt = get_detailed_standard_full_last_conv_bot_mission_with_context(context, last_question, last_last_user_question, last_answer)
+
         return filename, context, prompt
 
     except RAGAuthenticationError:
@@ -100,33 +124,6 @@ async def get_filename_context_prompt(dispatcher, action_label, last_second_ques
         code_exception = "RAG service failure"
         await send_custom_fallback_problem_to_team_leader_with_fe(dispatcher, action_label, rag_payload, code_exception, standard_user_friendly_msg)
         return None, None, None
-
-async def get_filename_context_prompt(action_label, last_last_user_question, last_answer, full_history, maintained_intent):
-    full_history = f"""{full_history.strip()}"""
-    last_question = full_history.split(":")[0].strip()
-
-    log_info_text(action_label, "👉  =====> SARSA full_history : " + full_history)
-    log_info_text(action_label, "👉  =====> SARSA last_question : " + last_question)
-
-    domains = []
-    log_info_text(action_label, f"maintained_intent: {str(maintained_intent)}")
-
-    native_question, domains, nbr_chunks = get_util_values(maintained_intent, None, None, None, domains, None)
-
-    if domains:
-        log_info_text(action_label, "============================================> domains : " + str(domains))
-
-    filename, context = await get_context_from_langchain_rag(action_label, full_history, domains, [], 2)
-    if maintained_intent == ActiveIntents.ASK_PROCEDURE_PG.value:
-        log_info_text(action_label, "============================================> SARSA SHORT : " + last_question)
-        prompt = get_short_standard_full_last_conv_bot_mission_with_context_alerts(context, last_question, last_last_user_question, last_answer, "")
-    elif maintained_intent in ActiveIntents.RESULTS_INTENTS:
-       prompt = get_extended_bot_mission_with_alerts(last_question, context, give_format())
-    else:
-        log_info_text(action_label, "============================================> SARSA EXTENDED : " + last_question)
-        prompt = get_detailed_standard_full_last_conv_bot_mission_with_context(context, last_question, last_last_user_question, last_answer)
-
-    return filename, context, prompt
 
 def get_grade_speciality_values(question, synonyms_lookup):
     grade_entity_values = get_clean_slot_values(question, synonyms_lookup["grade"])

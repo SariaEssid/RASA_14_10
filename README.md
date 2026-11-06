@@ -62,23 +62,34 @@ When a question is unrelated to PGPG, ESPRIT, or DSI—or when the RAG context i
 It may provide general information when appropriate, clearly marked as general rather than official PGPG information.
 If the user expresses an emotion, the chatbot responds empathetically before explaining its scope.
 
-### Examples
+### Example of simple discussion :
+- 👤 donner la mission de ef
+- 🤖👍 Trés précieuse comme remarque,
+L'Enseignant Formateur (EF) assure des modules d’enseignement en autonomie, encadre des projets étudiants et stages, participe à la conception et à l’évaluation des examens, et contribue à l’amélioration des contenus pédagogiques, sans gérer les sessions.
 
-#### Example-1
-**User:** Je vais acheter un PC. Quel est le modèle le plus performant ?
 
-**Bot:** Comme votre question porte sur l'achat d'un PC, il s'agit d'un sujet hors contexte du système PGPG ; à titre informatif uniquement (basé sur des connaissances générales et non sur les informations officielles PGPG), les modèles les plus performants actuellement sur le marché sont généralement des stations de travail comme le Dell Precision ou des ordinateurs portables haut de gamme gaming/création comme le ASUS ROG Zephyrus ou le MacBook Pro M3 Max, mais je me limite exclusivement à l'assistance PGPG pour vos passages de grade.
+- 👤 et pour efs
+- 🤖🧠 Bonne question !,
+La mission de l'Enseignant Formateur Sénior (EFS) comprend : concevoir et actualiser les programmes pédagogiques, encadrer les PFE et activités de recherche, accompagner et encadrer les enseignants, participer à l’innovation pédagogique et contribuer aux orientations académiques. L'EFS participe à une session de passage de grades mais ne la gère pas.
 
-#### Example-2
-**User:** donner la mission de ef
 
-**Bot:** En tant que candidat Enseignant Formateur (EF), vos missions consistent à assurer des modules d’enseignement en autonomie, à encadrer des projets étudiants et des stages, à participer à la conception et à l’évaluation des examens, ainsi qu’à contribuer à l’amélioration des contenus pédagogiques, tout en sachant que vous ne gérez pas les sessions.
+- 👤 vie en rose
+- 🤖✍️ C'est noté,
+Votre demande concernant "vie en rose" ne semble pas liée au système de passage de grades PGPG, à l'ESPRIT ou au support technique DSI ; il s'agit probablement d'une référence culturelle (chanson, film ou expression) qui dépasse donc le périmètre de mon assistance, mais je reste disponible si vous avez une question officielle sur vos grades.
+
+
+- 👤 ef vs elcc
+- 🤖 🙌 Tout à fait,
+La distinction entre ces deux filières repose exclusivement sur la spécialité du candidat : le parcours Enseignant Formateur (EFA à EFM) est réservé aux spécialités techniques telles que les TIC, l'électromécanique, les mathématiques, le génie civil ou le génie énergétique, tandis que le parcours Enseignant de Langue, Communication et Citoyenneté (ELCC à ELCC2) est strictement limité aux candidats dont la spécialité est les langues.
+
+
+- 👤 Est-ce que EF est un bon modèle d’ordinateur portable ?
+- 🤖 🧠 Bonne question !,
+Je comprends votre curiosité, mais je ne peux vous aider que sur les parcours EF et ELCC du système PGPG, et non sur le choix d'ordinateurs portables.
 
 ---
 
----
-
-## 📌 Project Purpose
+## 📌 Project Purpose    
 
 This chatbot was developed to:
 - Assist employees with real-time, AI-driven support on internal platforms
